@@ -1,0 +1,19 @@
+Project:
+
+[X] GTest
+[ ] GCoverity
+[X] Bazel + Dazel
+[ ] clang-tidy/cppcheck
+[ ] clang-format
+[ ] CI valgrind
+[ ] CI clang++/gcc build
+[ ] CI clang-tidy/cppcheck
+[ ] Install .hpp files
+[X] Use docker (? - check how dazel works)
+[ ] Create readme with examples
+[ ] Generate compile_commands.json
+
+Code:
+
+[ ] All functions in https://en.cppreference.com/w/cpp/container/list
+[ ] Unit test in GTest
