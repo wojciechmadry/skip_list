@@ -17,3 +17,8 @@ Code:
 
 [ ] All functions in https://en.cppreference.com/w/cpp/container/list
 [ ] Unit test in GTest
+[X] Add versioning
+[X] Remove "double linked" list
+[X] Use array or vector? -> Array
+[ ] Changable seed
+[ ] Check noexcept for all functions
