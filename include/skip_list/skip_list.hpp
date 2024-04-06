@@ -1,22 +1,23 @@
 #ifndef SKIP_LIST_SKIP_LIST_HPP_
 #define SKIP_LIST_SKIP_LIST_HPP_
 
+#include <cassert>
 #include <cstddef>
 #include <functional>
 #include <iterator>
 
+static constexpr const char* SKIP_LIST_VERSION = "1.0";
+
 template <typename T, typename Compare = std::less<T>, float Probability = 0.5f,
-          std::size_t MaxSize = 5, typename Allocator = std::allocator<T>>
+          std::size_t MaxNodeSize = 5, typename Allocator = std::allocator<T>>
 class skip_list {
   class node;
   template <typename IteratorValueType = node>
   class iterator_impl;
-  template <typename IteratorValueType = node>
-  class reverse_iterator_impl;
 
  public:
   static_assert(Probability >= 0.f && Probability < 1.0f);
-  static_assert(MaxSize >= 1);
+  static_assert(MaxNodeSize >= 1);
   using value_type = T;
   using allocator_type = Allocator;
   using size_type = std::size_t;
@@ -27,16 +28,39 @@ class skip_list {
   using const_pointer = std::allocator_traits<Allocator>::const_pointer;
   using iterator = iterator_impl<>;
   using const_iterator = iterator_impl<const node>;
-  using reverse_iterator = reverse_iterator_impl<>;
-  using const_reverse_iterator = reverse_iterator_impl<const node>;
+
+  reference front() {
+    assert(m_head != nullptr);
+    return m_head->value;
+  };
+  const_reference front() const {
+    assert(m_head != nullptr);
+    return m_head->value;
+  };
+
+  reference back() {
+    assert(m_tail != nullptr);
+    return m_tail->value;
+  }
+  const_reference back() const {
+    assert(m_tail != nullptr);
+    return m_tail->value;
+  }
+
+  iterator begin() { return iterator(m_head); }
+  const_iterator begin() const { return const_iterator{m_head}; }
+  const_iterator cbegin() const { return const_iterator{m_head}; }
+
+  iterator end() { return iterator{m_tail}; }
+  const_iterator end() const { return const_iterator{m_tail}; }
+  const_iterator cend() const { return const_iterator{m_tail}; }
+
+  size_type size() const noexcept { return m_size; };
+  bool empty() const noexcept { return size() == 0; };
 
  private:
   struct node {
-    struct bi_dir {
-      node* next = nullptr;
-      node* prev = nullptr;
-    };
-    std::array<bi_dir, MaxSize> nexts;
+    std::array<node*, MaxNodeSize> nexts;
     size_type size = 0u;
     T value;
   };
@@ -50,12 +74,25 @@ class skip_list {
    public:
     using difference_type = ptrdiff_t;
     using value_type = T;
-    value_type& operator*() const { return m_value->value; }
-    value_type& operator*() { return m_value->value; }
-    iterator_impl& operator++() { m_value = m_value->nexts[0].next; }
+    iterator_impl() = default;
+    iterator_impl(IteratorValueType* val_ptr) : m_value(val_ptr) {}
+
+    value_type& operator*() const {
+      assert(m_value != nullptr);
+      return m_value->value;
+    }
+    decltype(auto) operator*() {
+      assert(m_value != nullptr);
+      return m_value->value;
+    }
+    iterator_impl& operator++() {
+      assert(m_value != nullptr);
+      m_value = m_value->nexts[0];
+    }
     iterator_impl operator++(int) {
       auto copy = *this;
-      m_value = m_value->nexts[0].next;
+      assert(m_value != nullptr);
+      m_value = m_value->nexts[0];
       return copy;
     }
     bool operator==(const iterator_impl& rhs) const {
@@ -67,52 +104,10 @@ class skip_list {
       }
       return m_value->value == rhs.m_value->value;
     };
-    iterator_impl& operator--() { m_value = m_value->nexts[0].prev; }
-    iterator_impl operator--(int) {
-      auto copy = *this;
-      m_value = m_value->nexts[0].prev;
-      return copy;
-    }
 
    private:
     IteratorValueType* m_value;
   };
-
-  template <typename IteratorValueType>
-  class reverse_iterator_impl {
-   public:
-    using difference_type = ptrdiff_t;
-    using value_type = T;
-    value_type& operator*() const { return m_value->value; }
-    value_type& operator*() { return m_value->value; }
-    reverse_iterator_impl& operator++() { m_value = m_value->nexts[0].prev; }
-    reverse_iterator_impl operator++(int) {
-      auto copy = *this;
-      m_value = m_value->nexts[0].prev;
-      return copy;
-    }
-    bool operator==(const reverse_iterator_impl& rhs) const {
-      if (m_value == rhs.m_value) {
-        return true;
-      }
-      if (m_value == nullptr || rhs.m_value == nullptr) {
-        return false;
-      }
-      return m_value->value == rhs.m_value->value;
-    };
-    reverse_iterator_impl& operator--() { m_value = m_value->nexts[0].next; }
-    reverse_iterator_impl operator--(int) {
-      auto copy = *this;
-      m_value = m_value->nexts[0].next;
-      return copy;
-    }
-
-   private:
-    IteratorValueType* m_value;
-  };
-
-  static_assert(std::bidirectional_iterator<iterator>);
-  static_assert(std::bidirectional_iterator<reverse_iterator>);
 };
 
 #endif  // SKIP_LIST_SKIP_LIST_HPP_
