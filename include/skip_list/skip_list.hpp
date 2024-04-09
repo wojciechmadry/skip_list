@@ -29,6 +29,7 @@ class skip_list {
   using iterator = iterator_impl<>;
   using const_iterator = iterator_impl<const node>;
 
+  ~skip_list() noexcept { clear(); }
   reference front() {
     assert(m_head != nullptr);
     return m_head->value;
@@ -58,10 +59,31 @@ class skip_list {
   size_type size() const noexcept { return m_size; };
   bool empty() const noexcept { return size() == 0; };
 
+  void clear() noexcept {
+    if (m_head == nullptr) {
+      return;
+    }
+    if (m_head == m_tail) {
+      delete m_head;
+      m_head = nullptr;
+      m_tail = nullptr;
+      return;
+    }
+    while (m_head != m_tail) {
+      auto next = m_head->nexts[0];
+      delete m_head;
+      m_head = next;
+    }
+    delete m_tail;
+    m_head = nullptr;
+    m_tail = nullptr;
+  }
+
   template <typename U = T>
   void emplace(U&& value) {
     if (m_head == nullptr) {
       m_head = new node(std::forward<U>(value), m_allocator);
+      m_head->nexts[0] = m_tail;
       m_tail = m_head;
       return;
     }
@@ -71,6 +93,8 @@ class skip_list {
       } else {
         m_tail = new node(std::forward<U>(value), m_allocator);
       }
+      m_head->nexts[0] = m_tail;
+      m_head->size = 1;
       return;
     };
     /*node* place = m_head;
