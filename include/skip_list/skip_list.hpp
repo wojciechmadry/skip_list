@@ -51,23 +51,58 @@ class skip_list {
   const_iterator begin() const { return const_iterator{m_head}; }
   const_iterator cbegin() const { return const_iterator{m_head}; }
 
-  iterator end() { return iterator{m_tail}; }
-  const_iterator end() const { return const_iterator{m_tail}; }
-  const_iterator cend() const { return const_iterator{m_tail}; }
+  iterator end() { return iterator{m_tail + 1}; }
+  const_iterator end() const { return const_iterator{m_tail + 1}; }
+  const_iterator cend() const { return const_iterator{m_tail + 1}; }
 
   size_type size() const noexcept { return m_size; };
   bool empty() const noexcept { return size() == 0; };
 
+  template <typename U = T>
+  void emplace(U&& value) {
+    if (m_head == nullptr) {
+      m_head = new node(std::forward<U>(value), m_allocator);
+      m_tail = m_head;
+      return;
+    }
+    if (m_head == m_tail) {
+      if (m_comparator(value, m_head->value)) {
+        m_head = new node(std::forward<U>(value), m_allocator);
+      } else {
+        m_tail = new node(std::forward<U>(value), m_allocator);
+      }
+      return;
+    };
+    /*node* place = m_head;
+    for (difference_type i = static_cast<difference_type>(place->size); i >= 0;
+         --i) {
+      if (place->nexts[i] && m_comparator(place->nexts[i]->value, value)) {
+      }
+    }*/
+  }
+
+  template <typename U = T>
+  void push(U&& value) {
+    emplace(std::forward<U>(value));
+  }
+
  private:
   struct node {
+    template <typename U = T>
+    node(U&& a_value, Allocator alloc) {
+      using traits = std::allocator_traits<Allocator>;
+      traits::construct(alloc, &value, a_value);
+    }
     std::array<node*, MaxNodeSize> nexts;
-    size_type size = 0u;
     T value;
+    size_type size = 0u;
   };
 
   node* m_head = nullptr;
   node* m_tail = nullptr;
   size_type m_size = 0u;
+  Allocator m_allocator;
+  Compare m_comparator;
 
   template <typename IteratorValueType>
   class iterator_impl {
