@@ -15,6 +15,8 @@ Project:
 [ ] Change visibility of Bazel targets
 [ ] Come up with how to compile C++ files with C++ compiler
 [ ] Add compiler to sandbox
+[ ] Dazel - Set .cache folder to internal folder
+[ ] Add checking if code is formatted
 
 Code:
 
