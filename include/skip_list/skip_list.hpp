@@ -4,26 +4,30 @@
 #include <cassert>
 #include <cstddef>
 #include <functional>
-#include <iterator>
 
-static constexpr const char* SKIP_LIST_VERSION = "1.0";
+static constexpr const char *SKIP_LIST_VERSION = "1.0";
 
-template <typename T, typename Compare = std::less<T>, float Probability = 0.5f,
+// TODO:
+// Probability was changed to Int in template, because Bazel use C (clang)
+// compiler to build program And when building with clang, cannot define float
+// in template.
+template <typename T, typename Compare = std::less<T>, int ProbabilityInt = 50,
           std::size_t MaxNodeSize = 5, typename Allocator = std::allocator<T>>
 class skip_list {
-  class node;
-  template <typename IteratorValueType = node>
-  class iterator_impl;
+  struct node;
+  template <typename IteratorValueType = node> class iterator_impl;
 
- public:
+public:
+  static constexpr float Probability =
+      static_cast<float>(ProbabilityInt) / 100.f;
   static_assert(Probability >= 0.f && Probability < 1.0f);
   static_assert(MaxNodeSize >= 1);
   using value_type = T;
   using allocator_type = Allocator;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = value_type&;
-  using const_reference = const value_type&;
+  using reference = value_type &;
+  using const_reference = const value_type &;
   using pointer = std::allocator_traits<Allocator>::pointer;
   using const_pointer = std::allocator_traits<Allocator>::const_pointer;
   using iterator = iterator_impl<>;
@@ -79,8 +83,7 @@ class skip_list {
     m_tail = nullptr;
   }
 
-  template <typename U = T>
-  void emplace(U&& value) {
+  template <typename U = T> void emplace(U &&value) {
     if (m_head == nullptr) {
       m_head = new node(std::forward<U>(value), m_allocator);
       m_head->nexts[0] = m_tail;
@@ -105,38 +108,35 @@ class skip_list {
     }*/
   }
 
-  template <typename U = T>
-  void push(U&& value) {
+  template <typename U = T> void push(U &&value) {
     emplace(std::forward<U>(value));
   }
 
- private:
+private:
   struct node {
-    template <typename U = T>
-    node(U&& a_value, Allocator alloc) {
+    template <typename U = T> node(U &&a_value, Allocator alloc) {
       using traits = std::allocator_traits<Allocator>;
       traits::construct(alloc, &value, a_value);
     }
-    std::array<node*, MaxNodeSize> nexts;
+    std::array<node *, MaxNodeSize> nexts;
     T value;
     size_type size = 0u;
   };
 
-  node* m_head = nullptr;
-  node* m_tail = nullptr;
+  node *m_head = nullptr;
+  node *m_tail = nullptr;
   size_type m_size = 0u;
   Allocator m_allocator;
   Compare m_comparator;
 
-  template <typename IteratorValueType>
-  class iterator_impl {
-   public:
+  template <typename IteratorValueType> class iterator_impl {
+  public:
     using difference_type = ptrdiff_t;
     using value_type = T;
     iterator_impl() = default;
-    iterator_impl(IteratorValueType* val_ptr) : m_value(val_ptr) {}
+    iterator_impl(IteratorValueType *val_ptr) : m_value(val_ptr) {}
 
-    value_type& operator*() const {
+    value_type &operator*() const {
       assert(m_value != nullptr);
       return m_value->value;
     }
@@ -144,7 +144,7 @@ class skip_list {
       assert(m_value != nullptr);
       return m_value->value;
     }
-    iterator_impl& operator++() {
+    iterator_impl &operator++() {
       assert(m_value != nullptr);
       m_value = m_value->nexts[0];
     }
@@ -154,7 +154,7 @@ class skip_list {
       m_value = m_value->nexts[0];
       return copy;
     }
-    bool operator==(const iterator_impl& rhs) const {
+    bool operator==(const iterator_impl &rhs) const {
       if (m_value == rhs.m_value) {
         return true;
       }
@@ -164,10 +164,9 @@ class skip_list {
       return m_value->value == rhs.m_value->value;
     };
 
-   private:
-    IteratorValueType* m_value;
+  private:
+    IteratorValueType *m_value;
   };
 };
 
-#endif  // SKIP_LIST_SKIP_LIST_HPP_
-
+#endif // SKIP_LIST_SKIP_LIST_HPP_

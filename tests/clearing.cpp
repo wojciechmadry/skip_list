@@ -4,40 +4,42 @@
 static std::size_t new_calls = 0;
 static std::size_t delete_calls = 0;
 // no inline, required by [replacement.functions]/3
-void* operator new(std::size_t sz) {
+void *operator new(std::size_t sz) {
   if (sz == 0)
-    ++sz;  // avoid std::malloc(0) which may return nullptr on success
+    ++sz; // avoid std::malloc(0) which may return nullptr on success
   new_calls++;
-  if (void* ptr = std::malloc(sz)) return ptr;
+  if (void *ptr = std::malloc(sz))
+    return ptr;
 
-  throw std::bad_alloc{};  // required by [new.delete.single]/3
+  throw std::bad_alloc{}; // required by [new.delete.single]/3
 }
 
-void* operator new[](std::size_t sz) {
+void *operator new[](std::size_t sz) {
   if (sz == 0)
-    ++sz;  // avoid std::malloc(0) which may return nullptr on success
+    ++sz; // avoid std::malloc(0) which may return nullptr on success
   new_calls++;
-  if (void* ptr = std::malloc(sz)) return ptr;
+  if (void *ptr = std::malloc(sz))
+    return ptr;
 
-  throw std::bad_alloc{};  // required by [new.delete.single]/3
+  throw std::bad_alloc{}; // required by [new.delete.single]/3
 }
 
-void operator delete(void* ptr) noexcept {
+void operator delete(void *ptr) noexcept {
   delete_calls++;
   std::free(ptr);
 }
 
-void operator delete(void* ptr, std::size_t size) noexcept {
+void operator delete(void *ptr, std::size_t size) noexcept {
   delete_calls++;
   std::free(ptr);
 }
 
-void operator delete[](void* ptr) noexcept {
+void operator delete[](void *ptr) noexcept {
   delete_calls++;
   std::free(ptr);
 }
 
-void operator delete[](void* ptr, std::size_t size) noexcept {
+void operator delete[](void *ptr, std::size_t size) noexcept {
   delete_calls++;
   std::free(ptr);
 }

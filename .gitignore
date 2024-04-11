@@ -54,3 +54,6 @@
 
 *.lock
 .dazel_run
+external/
+compile_commands.json
+.cache
