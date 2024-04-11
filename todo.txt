@@ -4,14 +4,17 @@ Project:
 [ ] GCoverity
 [X] Bazel + Dazel
 [ ] clang-tidy/cppcheck
-[ ] clang-format
-[ ] CI valgrind
+[X] clang-format
+[ ] CI valgrind {?}
 [ ] CI clang++/gcc build
 [ ] CI clang-tidy/cppcheck
 [ ] Install .hpp files
 [X] Use docker (? - check how dazel works)
 [ ] Create readme with examples
-[ ] Generate compile_commands.json
+[X] Generate compile_commands.json
+[ ] Change visibility of Bazel targets
+[ ] Come up with how to compile C++ files with C++ compiler
+[ ] Add compiler to sandbox
 
 Code:
 
