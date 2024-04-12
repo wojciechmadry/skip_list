@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <exception>
+#include <new>
 
 static std::size_t new_calls = 0;
 static std::size_t delete_calls = 0;

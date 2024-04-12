@@ -14,7 +14,6 @@ Project:
 [X] Generate compile_commands.json
 [ ] Change visibility of Bazel targets
 [ ] Come up with how to compile C++ files with C++ compiler
-[ ] Add compiler to sandbox
 [ ] Add checking if code is formatted
 [X] Dazel - Set .cache folder to internal folder
 
