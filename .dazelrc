@@ -20,6 +20,9 @@ DAZEL_REPOSITORY="dazel"
 # The directory to build the dazel image in.
 DAZEL_DIRECTORY="."
 
+# Set dazel cache path
+DAZEL_BAZEL_USER_OUTPUT_ROOT="./.cache"
+
 # The command to run inside the container.
 # NOTE: You should add flags to the .bazelrc file instead of here, since it is
 #       also shared in the volume and it is a much cleaner way.
