@@ -6,6 +6,11 @@ alias(
 )
 
 alias(
+  name = "check_format",
+  actual = "//tools/format:format.check",
+)
+
+alias(
   name = "test",
   actual = "//tests:skip_list_tests",
 )
