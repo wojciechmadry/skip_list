@@ -1,28 +1,28 @@
 Project:
 
 [X] GTest
-[ ] GCoverity
 [X] Bazel + Dazel
-[ ] clang-tidy/cppcheck
 [X] clang-format
+[X] Use docker (? - check how dazel works)
+[X] Generate compile_commands.json
+[X] Dazel - Set .cache folder to internal folder
+[X] Add checking if code is formatted
+[ ] GCoverity
+[ ] clang-tidy/cppcheck
 [ ] CI valgrind {?}
 [ ] CI clang++/gcc build
 [ ] CI clang-tidy/cppcheck
 [ ] Install .hpp files
-[X] Use docker (? - check how dazel works)
 [ ] Create readme with examples
-[X] Generate compile_commands.json
 [ ] Change visibility of Bazel targets
 [ ] Come up with how to compile C++ files with C++ compiler
-[ ] Add checking if code is formatted
-[X] Dazel - Set .cache folder to internal folder
 
 Code:
 
-[ ] All functions in https://en.cppreference.com/w/cpp/container/list
-[ ] Unit test in GTest
 [X] Add versioning
 [X] Remove "double linked" list
 [X] Use array or vector? -> Array
+[ ] All functions in https://en.cppreference.com/w/cpp/container/list
+[ ] Unit test in GTest
 [ ] Changable seed
 [ ] Check noexcept for all functions
