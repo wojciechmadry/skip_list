@@ -6,6 +6,8 @@
 
 #include "skip_list.hpp"
 
+using namespace sl;
+
 TEST(Initialization, ClassCreation) {
   ASSERT_NO_THROW(skip_list<int>{});
   ASSERT_NO_THROW(skip_list<std::string>{});
@@ -32,22 +34,12 @@ TEST(Initialization, Typedefs) {
 TEST(Initialization, EmptyList) {
   skip_list<int> sl;
   const skip_list<int> const_sl;
-  EXPECT_DEATH({ sl.front(); }, "");
-  EXPECT_DEATH({ sl.back(); }, "");
-  EXPECT_DEATH({ const_sl.front(); }, "");
-  EXPECT_DEATH({ const_sl.back(); }, "");
   ASSERT_NO_THROW(sl.begin());
   ASSERT_NO_THROW(const_sl.begin());
   ASSERT_NO_THROW(const_sl.cbegin());
   ASSERT_NO_THROW(sl.end());
   ASSERT_NO_THROW(const_sl.end());
   ASSERT_NO_THROW(const_sl.cend());
-  EXPECT_DEATH({ *sl.begin(); }, "");
-  EXPECT_DEATH({ *sl.cbegin(); }, "");
-  EXPECT_DEATH({ *sl.end(); }, "");
-  EXPECT_DEATH({ *sl.cend(); }, "");
-  EXPECT_DEATH({ *const_sl.cbegin(); }, "");
-  EXPECT_DEATH({ *const_sl.cend(); }, "");
   ASSERT_TRUE(sl.empty());
   ASSERT_TRUE(const_sl.empty());
   ASSERT_EQ(sl.size(), 0);

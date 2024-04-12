@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <exception>
 #include <new>
-
 static std::size_t new_calls = 0;
 static std::size_t delete_calls = 0;
 // no inline, required by [replacement.functions]/3
@@ -48,6 +47,7 @@ void operator delete[](void *ptr, std::size_t size) noexcept {
 #include <gtest/gtest.h>
 
 #include "skip_list.hpp"
+using namespace sl;
 
 TEST(Clearing, Destructor) {}
 TEST(Clearing, ClearFunction) {
@@ -57,13 +57,18 @@ TEST(Clearing, ClearFunction) {
   sl.push(5);
   ASSERT_EQ(new_calls, 1);
   ASSERT_EQ(delete_calls, 0);
+  ASSERT_EQ(sl.size(), 1);
   sl.clear();
+  ASSERT_TRUE(sl.empty());
   ASSERT_EQ(delete_calls, new_calls);
   sl.push(3);
   ASSERT_EQ(new_calls, 2);
   ASSERT_EQ(delete_calls, 1);
+  ASSERT_EQ(sl.size(), 1);
   sl.push(5);
+  ASSERT_EQ(sl.size(), 2);
   ASSERT_EQ(new_calls, 3);
   sl.clear();
+  ASSERT_TRUE(sl.empty());
   ASSERT_EQ(delete_calls, new_calls);
 }
