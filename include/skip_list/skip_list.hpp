@@ -51,7 +51,7 @@ struct node {
     assert(index < MaxNodeSize);
     return m_nexts[index];
   }
-  const node *&get_next(size_type index) const {
+  const node *const &get_next(size_type index) const {
     assert(index < MaxNodeSize);
     return m_nexts[index];
   }
@@ -98,19 +98,12 @@ public:
   using const_iterator = iterator_impl<const node_type>;
 
   ~skip_list() noexcept { clear(); }
-  reference front() {
-    assert(m_head != nullptr);
-    return m_head->get();
-  };
+
   const_reference front() const {
     assert(m_head != nullptr);
     return m_head->get();
   };
 
-  reference back() {
-    assert(m_tail != nullptr);
-    return m_tail->get();
-  }
   const_reference back() const {
     assert(m_tail != nullptr);
     return m_tail->get();
@@ -120,9 +113,9 @@ public:
   const_iterator begin() const { return const_iterator{m_head}; }
   const_iterator cbegin() const { return const_iterator{m_head}; }
 
-  iterator end() { return iterator{m_tail + 1}; }
-  const_iterator end() const { return const_iterator{m_tail + 1}; }
-  const_iterator cend() const { return const_iterator{m_tail + 1}; }
+  iterator end() { return iterator{nullptr}; }
+  const_iterator end() const { return const_iterator{nullptr}; }
+  const_iterator cend() const { return const_iterator{nullptr}; }
 
   size_type size() const noexcept { return m_size; };
   bool empty() const noexcept { return size() == 0; };
@@ -158,9 +151,6 @@ public:
     if (m_head == nullptr) {
       m_head = new_node;
       m_tail = m_head;
-      for (size_type i = 0u; i < m_head->size(); ++i) {
-        m_head->get_next(i) = m_tail;
-      }
       return iterator(m_head);
     }
     if (m_head == m_tail) {
@@ -229,6 +219,17 @@ public:
   iterator push(U &&value, size_type *visited_nodes_counter = nullptr) {
     return emplace(std::forward<U>(value), visited_nodes_counter);
   }
+
+  template <typename U = T>
+  iterator insert(U &&value, size_type *visited_nodes_counter = nullptr) {
+    return emplace(std::forward<U>(value), visited_nodes_counter);
+  }
+
+  template <typename Iter, typename U = T>
+  iterator insert(Iter, U &&value, size_type *visited_nodes_counter = nullptr) {
+    return emplace(std::forward<U>(value), visited_nodes_counter);
+  }
+
   template <class SeedSeq> void set_seed(SeedSeq &seed) {
     m_generator.seed(seed);
   }
@@ -252,11 +253,7 @@ private:
     iterator_impl() = default;
     iterator_impl(IteratorValueType *val_ptr) : m_it(val_ptr) {}
 
-    value_type &operator*() const {
-      assert(m_it != nullptr);
-      return m_it->get();
-    }
-    decltype(auto) operator*() {
+    const value_type &operator*() const {
       assert(m_it != nullptr);
       return m_it->get();
     }
