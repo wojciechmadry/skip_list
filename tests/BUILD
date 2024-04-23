@@ -7,6 +7,7 @@ cc_test(
           "clearing.cpp",
           "node.cpp",
           "versioning.cpp",
+          "iterators.cpp",
          ],
   deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
 )
