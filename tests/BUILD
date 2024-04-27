@@ -8,6 +8,7 @@ cc_test(
           "node.cpp",
           "versioning.cpp",
           "iterators.cpp",
+          "operators.cpp",
          ],
   deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
 )
