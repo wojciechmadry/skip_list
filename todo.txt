@@ -24,5 +24,9 @@ Code:
 [X] Use array or vector? -> Array
 [ ] All functions in https://en.cppreference.com/w/cpp/container/list
 [ ] Unit test in GTest
-[ ] Changable seed
+[X] Changable seed
 [ ] Check noexcept for all functions
+[ ] Add constexpr +  Test
+[ ] Check custom allocator
+[ ] Check custom comparator
+[ ] Test list with unique_ptr and string
