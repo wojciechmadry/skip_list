@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <functional>
+#include <limits>
 #include <random>
 #include <string_view>
 
@@ -97,7 +98,65 @@ public:
   using iterator = iterator_impl<>;
   using const_iterator = iterator_impl<const node_type>;
 
+  skip_list() = default;
+
+  explicit skip_list(const Compare &comp, const Allocator &alloc)
+      : m_comparator(comp), m_allocator(alloc) {}
+
+  skip_list(size_type count, const T &value, const Compare &comp = Compare(),
+            const Allocator &alloc = Allocator())
+      : m_comparator(comp), m_allocator(alloc) {
+    for (size_type i = 0u; i < count; ++i) {
+      push(value);
+    }
+  }
+
+  explicit skip_list(size_type count, const Compare &comp = Compare(),
+                     const Allocator &alloc = Allocator())
+      : m_comparator(comp), m_allocator(alloc) {
+    for (size_type i = 0u; i < count; ++i) {
+      push(T{});
+    }
+  }
+
+  template <class InputIt>
+    requires(!std::is_same_v<typename std::iterator_traits<InputIt>::value_type,
+                             void>)
+  skip_list(InputIt first, InputIt last, const Allocator &alloc = Allocator())
+      : m_allocator(alloc) {
+    for (; first != last; ++first) {
+      push(*first);
+    }
+  }
+
+  skip_list(const skip_list &other, const Allocator &alloc)
+      : m_allocator(alloc) {
+    for (const auto &v : other) {
+      push(v);
+    }
+  }
+
+  skip_list(const skip_list &other) : skip_list(other, Allocator{}) {}
+
+  skip_list(skip_list &&other, const Allocator &alloc) : m_allocator(alloc) {
+    m_head = other.m_head;
+    other.m_head = nullptr;
+    m_tail = other.m_tail;
+    other.m_tail = nullptr;
+    m_size = other.m_size;
+    other.m_size = 0u;
+    m_comparator = other.m_comparator;
+    m_generator = other.m_generator;
+  }
+
+  skip_list(skip_list &&other) : skip_list(std::move(other), Allocator{}) {}
+
+  skip_list(std::initializer_list<T> init, const Allocator &alloc = Allocator())
+      : skip_list(init.begin(), init.end(), alloc) {}
+
   ~skip_list() noexcept { clear(); }
+
+  allocator_type get_allocator() const noexcept { return m_allocator; }
 
   const_reference front() const {
     assert(m_head != nullptr);
@@ -109,16 +168,17 @@ public:
     return m_tail->get();
   }
 
-  iterator begin() { return iterator(m_head); }
-  const_iterator begin() const { return const_iterator{m_head}; }
+  iterator begin() const { return iterator(m_head); }
   const_iterator cbegin() const { return const_iterator{m_head}; }
 
-  iterator end() { return iterator{nullptr}; }
-  const_iterator end() const { return const_iterator{nullptr}; }
+  iterator end() const { return iterator{nullptr}; }
   const_iterator cend() const { return const_iterator{nullptr}; }
 
   size_type size() const noexcept { return m_size; };
   bool empty() const noexcept { return size() == 0; };
+  difference_type max_size() const noexcept {
+    return std::numeric_limits<difference_type>::max();
+  };
 
   void clear() noexcept {
     m_size = 0u;
