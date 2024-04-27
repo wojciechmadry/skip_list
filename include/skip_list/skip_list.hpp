@@ -124,29 +124,18 @@ public:
                              void>)
   skip_list(InputIt first, InputIt last, const Allocator &alloc = Allocator())
       : m_allocator(alloc) {
-    for (; first != last; ++first) {
-      push(*first);
-    }
+    std::copy(first, last, std::inserter(*this, begin()));
   }
 
   skip_list(const skip_list &other, const Allocator &alloc)
       : m_allocator(alloc) {
-    for (const auto &v : other) {
-      push(v);
-    }
+    *this = other;
   }
 
   skip_list(const skip_list &other) : skip_list(other, Allocator{}) {}
 
   skip_list(skip_list &&other, const Allocator &alloc) : m_allocator(alloc) {
-    m_head = other.m_head;
-    other.m_head = nullptr;
-    m_tail = other.m_tail;
-    other.m_tail = nullptr;
-    m_size = other.m_size;
-    other.m_size = 0u;
-    m_comparator = other.m_comparator;
-    m_generator = other.m_generator;
+    *this = std::move(other);
   }
 
   skip_list(skip_list &&other) : skip_list(std::move(other), Allocator{}) {}
@@ -155,6 +144,58 @@ public:
       : skip_list(init.begin(), init.end(), alloc) {}
 
   ~skip_list() noexcept { clear(); }
+
+  skip_list &operator=(const skip_list &other) {
+    if (this == &other) {
+      return *this;
+    }
+    clear();
+    m_comparator = other.m_comparator;
+    m_generator = other.m_generator;
+    m_allocator = other.m_allocator;
+    std::copy(other.begin(), other.end(), std::inserter(*this, begin()));
+    return *this;
+  }
+
+  skip_list &operator=(skip_list &&other) noexcept {
+    if (this == &other) {
+      return *this;
+    }
+    m_head = other.m_head;
+    other.m_head = nullptr;
+    m_tail = other.m_tail;
+    other.m_tail = nullptr;
+    m_size = other.m_size;
+    other.m_size = 0u;
+    m_comparator = std::move(other.m_comparator);
+    m_generator = std::move(other.m_generator);
+    m_allocator = std::move(other.m_allocator);
+    return *this;
+  }
+
+  skip_list &operator=(std::initializer_list<T> ilist) {
+    clear_elements();
+    std::copy(ilist.begin(), ilist.end(), std::inserter(*this, begin()));
+  }
+
+  void assign(size_type count, const T &value) {
+    clear_elements();
+    for (size_type c = 0u; c < count; ++c) {
+      push(value);
+    }
+  }
+
+  template <class InputIt>
+    requires(!std::is_same_v<typename std::iterator_traits<InputIt>::value_type,
+                             void>)
+  void assign(InputIt first, InputIt last) {
+    clear_elements();
+    std::copy(first, last, std::inserter(*this, begin()));
+  }
+
+  void assign(std::initializer_list<T> ilist) {
+    assign(ilist.begin(), ilist.end());
+  }
 
   allocator_type get_allocator() const noexcept { return m_allocator; }
 
@@ -181,24 +222,10 @@ public:
   };
 
   void clear() noexcept {
-    m_size = 0u;
-    if (m_head == nullptr) {
-      return;
-    }
-    if (m_head == m_tail) {
-      delete m_head;
-      m_head = nullptr;
-      m_tail = nullptr;
-      return;
-    }
-    while (m_head != m_tail) {
-      auto next = m_head->get_next(0);
-      delete m_head;
-      m_head = next;
-    }
-    delete m_tail;
-    m_head = nullptr;
-    m_tail = nullptr;
+    m_comparator = Compare();
+    m_allocator = Allocator();
+    m_generator = std::mt19937{std::random_device{}()};
+    clear_elements();
   }
 
   template <typename U = T>
@@ -299,6 +326,27 @@ private:
     return new node_type(std::forward<U>(value), m_generator);
   }
 
+  void clear_elements() noexcept {
+    m_size = 0u;
+    if (m_head == nullptr) {
+      return;
+    }
+    if (m_head == m_tail) {
+      delete m_head;
+      m_head = nullptr;
+      m_tail = nullptr;
+      return;
+    }
+    while (m_head != m_tail) {
+      auto next = m_head->get_next(0);
+      delete m_head;
+      m_head = next;
+    }
+    delete m_tail;
+    m_head = nullptr;
+    m_tail = nullptr;
+  }
+
   node_type *m_head = nullptr;
   node_type *m_tail = nullptr;
   size_type m_size = 0u;
@@ -335,6 +383,26 @@ private:
     IteratorValueType *m_it;
   };
 };
+
+template <typename T, typename CompareLhs, typename CompareRhs, int ProbLhs,
+          int ProbRhs, std::size_t MaxNodeSizeLhs, std::size_t MaxNodeSizeRhs,
+          typename Allocator = std::allocator<T>>
+bool operator==(
+    const skip_list<T, CompareLhs, ProbLhs, MaxNodeSizeLhs, Allocator> &lhs,
+    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator> &rhs) {
+  return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+}
+
+template <typename T, typename CompareLhs, typename CompareRhs, int ProbLhs,
+          int ProbRhs, std::size_t MaxNodeSizeLhs, std::size_t MaxNodeSizeRhs,
+          typename Allocator = std::allocator<T>>
+auto operator<=>(
+    const skip_list<T, CompareLhs, ProbLhs, MaxNodeSizeLhs, Allocator> &lhs,
+    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator> &rhs) {
+  return std::lexicographical_compare_three_way(
+      lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(),
+      [](const T &lhs_l, const T &rhs_l) { return lhs_l <=> rhs_l; });
+}
 
 } // namespace sl
 #endif // SKIP_LIST_SKIP_LIST_HPP_
