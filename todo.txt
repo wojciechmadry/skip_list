@@ -28,5 +28,5 @@ Code:
 [ ] Check noexcept for all functions
 [ ] Add constexpr +  Test
 [ ] Check custom allocator
-[ ] Check custom comparator
-[ ] Test list with unique_ptr and string
+[X] Check custom comparator
+[Partial] Test list with unique_ptr and string

@@ -28,7 +28,7 @@ TEST(Initialization, Typedefs) {
   ASSERT_TRUE((std::is_same_v<int *, decltype(sl)::pointer>));
   ASSERT_TRUE((std::is_same_v<const int *, decltype(sl)::const_pointer>));
   ASSERT_TRUE(
-      (!std::is_same_v<decltype(sl)::iterator, decltype(sl)::const_iterator>));
+      (std::is_same_v<decltype(sl)::iterator, decltype(sl)::const_iterator>));
 }
 
 TEST(Initialization, EmptyList) {

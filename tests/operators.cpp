@@ -239,4 +239,3 @@ TEST(Operators, OperatorGe) {
   ASSERT_TRUE(sl1 >= sl2);
   ASSERT_FALSE(sl2 >= sl1);
 }
-

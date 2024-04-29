@@ -136,3 +136,60 @@ TEST(Clearing, ClearFunctionRandomSeed) {
     ASSERT_EQ(delete_calls, new_calls);
   }
 }
+
+TEST(Clearing, ClearErase) {
+  skip_list<int> sl;
+  std::seed_seq seed{500};
+  ASSERT_NO_THROW(sl.set_seed(seed));
+  new_calls = 0;
+  delete_calls = 0;
+  static constexpr std::size_t NEW_SIZE = 1000u;
+  for (std::size_t i = 1u; i <= NEW_SIZE; ++i) {
+    ASSERT_NO_THROW(sl.push(i));
+    ASSERT_EQ(new_calls, i);
+  }
+  ASSERT_EQ(new_calls, NEW_SIZE);
+  ASSERT_EQ(delete_calls, 0u);
+  std::size_t deleted_calls = 1u;
+  for (std::size_t i = NEW_SIZE / 2; i <= NEW_SIZE; ++i) {
+    ASSERT_NO_THROW(sl.erase(i));
+    ASSERT_EQ(delete_calls, deleted_calls++);
+  }
+  for (std::size_t i = 1; i < NEW_SIZE / 2; ++i) {
+    ASSERT_NO_THROW(sl.erase(i));
+    ASSERT_EQ(delete_calls, deleted_calls++);
+  }
+  ASSERT_EQ(delete_calls, new_calls);
+}
+
+TEST(Clearing, ClearEraseInsert) {
+  skip_list<int> sl;
+  std::seed_seq seed{500};
+  ASSERT_NO_THROW(sl.set_seed(seed));
+  ASSERT_NO_THROW(sl.push({1, 4, 7, 8, 9, 15, 25, 30}));
+  const std::vector<int> elems{1, 4, 7, 8, 9, 15, 25, 30};
+  new_calls = 0;
+  delete_calls = 0;
+  std::size_t new_counter{0u};
+  std::size_t delete_counter{0u};
+  for (std::size_t i = 0; i < 100; ++i) {
+    for (auto el : elems) {
+      auto found = sl.find(el);
+      ASSERT_NE(found, nullptr);
+      ASSERT_EQ(*found, el);
+      ASSERT_NO_THROW(sl.erase(el));
+      ++delete_counter;
+      ASSERT_EQ(delete_counter, delete_calls);
+      ASSERT_EQ(sl.find(el), nullptr);
+      ASSERT_NO_THROW(sl.push(el));
+      ++new_counter;
+      ASSERT_EQ(new_counter, new_calls);
+    }
+  }
+  auto it = sl.begin();
+  for (auto el : elems) {
+    ASSERT_NE(it, sl.end());
+    ASSERT_EQ(*it, el);
+    ++it;
+  }
+}
