@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <random>
 #include <string_view>
@@ -20,7 +21,7 @@ struct node {
   node(U &&a_value, Generator &gen) {
     Allocator alloc;
     using traits = std::allocator_traits<Allocator>;
-    traits::construct(alloc, &m_value, a_value);
+    traits::construct(alloc, &m_value, std::forward<U>(a_value));
     std::uniform_int_distribution<size_type> uniform_dist(1, MaxNodeSize);
     m_size = uniform_dist(gen);
   }
@@ -80,7 +81,7 @@ public:
   using node_type = node<T, MaxNodeSize, Allocator>;
 
 private:
-  template <typename IteratorValueType = node_type> class iterator_impl;
+  template <typename IteratorValueType = const node_type> class iterator_impl;
 
 public:
   static constexpr float Probability =
@@ -95,8 +96,8 @@ public:
   using const_reference = const value_type &;
   using pointer = std::allocator_traits<Allocator>::pointer;
   using const_pointer = std::allocator_traits<Allocator>::const_pointer;
-  using iterator = iterator_impl<>;
   using const_iterator = iterator_impl<const node_type>;
+  using iterator = const_iterator;
 
   skip_list() = default;
 
@@ -241,7 +242,7 @@ public:
       return iterator(m_head);
     }
     if (m_head == m_tail) {
-      if (m_comparator(value, m_head->get())) {
+      if (m_comparator(new_node->get(), m_head->get())) {
         m_head = new_node;
         m_tail->clear_nexts();
       } else {
@@ -253,7 +254,7 @@ public:
       }
       return iterator(new_node);
     };
-    if (m_comparator(value, m_head->get())) {
+    if (m_comparator(new_node->get(), m_head->get())) {
       new_node->get_next(0) = m_head;
       std::swap(m_head, new_node);
       m_head->fill_nexts();
@@ -272,7 +273,7 @@ public:
           }
           continue;
         }
-        if (m_comparator((*it)->get(), value)) {
+        if (m_comparator((*it)->get(), new_node->get())) {
           nd = *it;
           looped = true;
           break;
@@ -302,6 +303,18 @@ public:
     return iterator(new_node);
   }
 
+  void push(std::initializer_list<T> ilist) {
+    for (const auto &el : ilist) {
+      emplace(el);
+    }
+  }
+
+  void emplace(std::initializer_list<T> ilist) {
+    for (const auto &el : ilist) {
+      emplace(el);
+    }
+  }
+
   template <typename U = T>
   iterator push(U &&value, size_type *visited_nodes_counter = nullptr) {
     return emplace(std::forward<U>(value), visited_nodes_counter);
@@ -319,6 +332,129 @@ public:
 
   template <class SeedSeq> void set_seed(SeedSeq &seed) {
     m_generator.seed(seed);
+  }
+
+  void merge(skip_list &other) {
+    if (this == &other) {
+      return;
+    }
+    auto it = other.m_head;
+    while (it != nullptr) {
+      push(std::move(it->get()));
+      it = it->get_next(0);
+    }
+    other.clear_elements();
+  }
+
+  void merge(skip_list &&other) { merge(other); }
+
+  const_iterator find(const T &key) const {
+    if (m_tail != nullptr && (m_comparator(m_tail->get(), key) ||
+                              m_comparator(key, m_head->get()))) {
+      return cend();
+    }
+    if (m_head != nullptr && m_head->get() == key) {
+      return cbegin();
+    }
+    auto it = m_head;
+    while (it != nullptr) {
+      auto rbegin = it->rbegin();
+      auto rend = it->rend();
+      while (rbegin != rend) {
+        if (*rbegin == nullptr) {
+          ++rbegin;
+          continue;
+        }
+        const auto &value = (*rbegin)->get();
+        if (value == key) {
+          return const_iterator{*rbegin};
+        } else if (m_comparator(value, key)) {
+          it = *rbegin;
+          break;
+        }
+        ++rbegin;
+      }
+      if (rbegin == rend) {
+        break;
+      }
+    }
+    return cend();
+  }
+
+  const_iterator erase(const T &key) {
+    if (empty()) {
+      return cend();
+    }
+    if (m_tail != nullptr && (m_comparator(m_tail->get(), key) ||
+                              m_comparator(key, m_head->get()))) {
+      return cend();
+    }
+    if (m_head != nullptr && m_head->get() == key) {
+      if (m_head == m_tail) {
+        m_tail = nullptr;
+      }
+      --m_size;
+      auto next = m_head->get_next(0);
+      delete m_head;
+      m_head = next;
+      return cbegin();
+    }
+
+    std::array<node_type *, MaxNodeSize> observers{nullptr};
+    auto obs = observers.begin();
+    node_type *found = nullptr;
+    auto it = m_head;
+    while (it != nullptr) {
+      auto rbegin = it->rbegin();
+      auto rend = it->rend();
+      while (rbegin != rend) {
+        if (*rbegin == nullptr) {
+          ++rbegin;
+          continue;
+        }
+        const auto &value = (*rbegin)->get();
+        if (value == key) {
+          *(obs++) = it;
+          found = *rbegin;
+        } else if (m_comparator(value, key)) {
+          it = *rbegin;
+          break;
+        }
+        ++rbegin;
+      }
+      if (rbegin == rend) {
+        break;
+      }
+    }
+    if (found != nullptr) {
+      --m_size;
+      auto result = found->get_next(0);
+      for (auto o : observers) {
+        if (o == nullptr) {
+          continue;
+        }
+        for (auto rit = o->rbegin(); rit != o->rend(); ++rit) {
+          if (*rit == found) {
+            *rit = nullptr;
+          }
+        }
+        if (o->get_next(0) == nullptr) {
+          o->get_next(0) = result;
+        }
+      }
+      if (found == m_tail) {
+        m_tail = *(obs - 1);
+      }
+      delete found;
+      for (auto o : observers) {
+        if (o != nullptr) {
+          o->fill_nexts();
+        }
+      }
+      return const_iterator{result};
+    }
+
+    return cend();
   }
 
 private:

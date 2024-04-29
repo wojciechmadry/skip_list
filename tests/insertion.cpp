@@ -332,3 +332,20 @@ INSTANTIATE_TEST_CASE_P(Push, InsertionPushEmplace,
 
 INSTANTIATE_TEST_CASE_P(Emplace, InsertionPushEmplace,
                         ::testing::Values(lambda_emplace));
+
+TEST(Insertion, PushInitList) {
+  skip_list<int> sl;
+  ASSERT_NO_THROW(sl.push({4, 2, 1, 3, 0}));
+  ASSERT_EQ(sl.size(), 5);
+  auto it = sl.begin();
+  for (int i = 0; i < 4; ++i, ++it) {
+    ASSERT_EQ(i, *it);
+  }
+  ASSERT_NO_THROW(sl.clear());
+  ASSERT_NO_THROW(sl.emplace({4, 2, 1, 3, 0}));
+  ASSERT_EQ(sl.size(), 5);
+  it = sl.begin();
+  for (int i = 0; i < 4; ++i, ++it) {
+    ASSERT_EQ(i, *it);
+  }
+}

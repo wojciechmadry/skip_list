@@ -9,6 +9,9 @@ cc_test(
           "versioning.cpp",
           "iterators.cpp",
           "operators.cpp",
+          "operations.cpp",
+          "find.cpp",
+          "erase.cpp",
          ],
   deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
 )
