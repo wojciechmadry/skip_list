@@ -75,3 +75,26 @@ TEST(Operations, StdSwap) {
   }
   ASSERT_EQ(it, sl_neg.end());
 }
+
+TEST(Operations, Swap) {
+  skip_list<int> sl{1, 3, 2};
+  skip_list<int> sl_neg{-3, -1, -2, 0};
+  ASSERT_EQ(sl.size(), 3);
+  ASSERT_EQ(sl_neg.size(), 4);
+  ASSERT_NO_THROW(sl.swap(sl_neg));
+  ASSERT_EQ(sl.size(), 4);
+  ASSERT_EQ(sl_neg.size(), 3);
+  auto it = sl.begin();
+  for (int i = -3; i <= 0; ++i, ++it) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_EQ(*it, i);
+  }
+  ASSERT_EQ(it, sl.end());
+  it = sl_neg.begin();
+  for (int i = 1; i <= 3; ++i, ++it) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_EQ(*it, i);
+  }
+  ASSERT_EQ(it, sl_neg.end());
+  ASSERT_NO_THROW(sl.swap(sl));
+}
