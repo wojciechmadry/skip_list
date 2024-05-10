@@ -6,6 +6,8 @@
 #include <functional>
 #include <initializer_list>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <random>
 #include <string_view>
 
@@ -27,18 +29,13 @@ struct node {
   }
 
   void fill_nexts() {
-    if (m_nexts[0] == nullptr) {
-      return;
-    }
-    size_type i = 1u;
     auto next = m_nexts[0];
-    while (i < m_size && next) {
-      size_type j = i;
-      for (; j < next->m_size && j < m_size; ++j) {
-        m_nexts[j] = next;
-        ++i;
+    size_type i = 1u;
+    while (next && i < m_size) {
+      while (i < next->m_size && i < m_size) {
+        m_nexts[i++] = next;
       }
-      next = next->m_nexts[0];
+      next = (i < next->m_size) ? next->m_nexts[i] : next->m_nexts[0];
     }
   };
 
@@ -49,20 +46,20 @@ struct node {
   };
 
   size_type size() const noexcept { return m_size; }
-  node *&get_next(size_type index) {
+  node *&get_next(size_type index) noexcept {
     assert(index < MaxNodeSize);
     return m_nexts[index];
   }
-  const node *const &get_next(size_type index) const {
+  const node *const &get_next(size_type index) const noexcept {
     assert(index < MaxNodeSize);
     return m_nexts[index];
   }
-  T &get() { return m_value; }
-  const T &get() const { return m_value; }
+  T &get() noexcept { return m_value; }
+  const T &get() const noexcept { return m_value; }
 
-  auto rbegin() { return m_nexts.rbegin() + (MaxNodeSize - m_size); }
+  auto rbegin() noexcept { return m_nexts.rbegin() + (MaxNodeSize - m_size); }
 
-  auto rend() { return m_nexts.rend(); }
+  auto rend() noexcept { return m_nexts.rend(); }
 
 private:
   std::array<node *, MaxNodeSize> m_nexts{nullptr};
@@ -135,11 +132,13 @@ public:
 
   skip_list(const skip_list &other) : skip_list(other, Allocator{}) {}
 
-  skip_list(skip_list &&other, const Allocator &alloc) : m_allocator(alloc) {
+  skip_list(skip_list &&other, const Allocator &alloc) noexcept
+      : m_allocator(alloc) {
     *this = std::move(other);
   }
 
-  skip_list(skip_list &&other) : skip_list(std::move(other), Allocator{}) {}
+  skip_list(skip_list &&other) noexcept
+      : skip_list(std::move(other), Allocator{}) {}
 
   skip_list(std::initializer_list<T> init, const Allocator &alloc = Allocator())
       : skip_list(init.begin(), init.end(), alloc) {}
@@ -174,6 +173,18 @@ public:
     return *this;
   }
 
+  void swap(skip_list &other) noexcept {
+    if (this == &other) {
+      return;
+    }
+    std::swap(m_head, other.m_head);
+    std::swap(m_tail, other.m_tail);
+    std::swap(m_size, other.m_size);
+    std::swap(m_allocator, other.m_allocator);
+    std::swap(m_comparator, other.m_comparator);
+    std::swap(m_generator, other.m_generator);
+  }
+
   skip_list &operator=(std::initializer_list<T> ilist) {
     clear_elements();
     std::copy(ilist.begin(), ilist.end(), std::inserter(*this, begin()));
@@ -200,21 +211,21 @@ public:
 
   allocator_type get_allocator() const noexcept { return m_allocator; }
 
-  const_reference front() const {
+  const_reference front() const noexcept {
     assert(m_head != nullptr);
     return m_head->get();
   };
 
-  const_reference back() const {
+  const_reference back() const noexcept {
     assert(m_tail != nullptr);
     return m_tail->get();
   }
 
-  iterator begin() const { return iterator(m_head); }
-  const_iterator cbegin() const { return const_iterator{m_head}; }
+  iterator begin() const noexcept { return iterator(m_head); }
+  const_iterator cbegin() const noexcept { return const_iterator{m_head}; }
 
-  iterator end() const { return iterator{nullptr}; }
-  const_iterator cend() const { return const_iterator{nullptr}; }
+  iterator end() const noexcept { return iterator{nullptr}; }
+  const_iterator cend() const noexcept { return const_iterator{nullptr}; }
 
   size_type size() const noexcept { return m_size; };
   bool empty() const noexcept { return size() == 0; };
@@ -223,9 +234,12 @@ public:
   };
 
   void clear() noexcept {
-    m_comparator = Compare();
-    m_allocator = Allocator();
-    m_generator = std::mt19937{std::random_device{}()};
+    try {
+      m_comparator = Compare();
+      m_allocator = Allocator();
+      m_generator = std::mt19937{std::random_device{}()};
+    } catch (...) {
+    }
     clear_elements();
   }
 
@@ -234,8 +248,8 @@ public:
     if (visited_nodes_counter) {
       *visited_nodes_counter = 0u;
     }
-    ++m_size;
     auto new_node = create_node(std::forward<U>(value));
+    ++m_size;
     if (m_head == nullptr) {
       m_head = new_node;
       m_tail = m_head;
@@ -325,9 +339,22 @@ public:
     return emplace(std::forward<U>(value), visited_nodes_counter);
   }
 
-  template <typename Iter, typename U = T>
-  iterator insert(Iter, U &&value, size_type *visited_nodes_counter = nullptr) {
+  template <typename InputIt, typename U = T>
+    requires(!std::is_same_v<typename std::iterator_traits<InputIt>::value_type,
+                             void>)
+  iterator insert(InputIt, U &&value,
+                  size_type *visited_nodes_counter = nullptr) {
     return emplace(std::forward<U>(value), visited_nodes_counter);
+  }
+
+  template <typename InputIt>
+    requires(!std::is_same_v<typename std::iterator_traits<InputIt>::value_type,
+                             void>)
+  void insert(InputIt first, InputIt last) {
+    while (first != last) {
+      emplace(*first);
+      ++first;
+    }
   }
 
   template <class SeedSeq> void set_seed(SeedSeq &seed) {
@@ -348,21 +375,17 @@ public:
 
   void merge(skip_list &&other) { merge(other); }
 
-  const_iterator find(const T &key) const {
-    if (m_tail != nullptr && (m_comparator(m_tail->get(), key) ||
-                              m_comparator(key, m_head->get()))) {
+  const_iterator find(const T &key) const noexcept {
+    if (value_out_of_range(key)) {
       return cend();
     }
     if (m_head != nullptr && m_head->get() == key) {
       return cbegin();
     }
-    auto it = m_head;
-    while (it != nullptr) {
+    for (auto it = m_head; it != nullptr;) {
       auto rbegin = it->rbegin();
-      auto rend = it->rend();
-      while (rbegin != rend) {
+      for (; rbegin != it->rend(); ++rbegin) {
         if (*rbegin == nullptr) {
-          ++rbegin;
           continue;
         }
         const auto &value = (*rbegin)->get();
@@ -372,22 +395,46 @@ public:
           it = *rbegin;
           break;
         }
-        ++rbegin;
       }
-      if (rbegin == rend) {
+      if (rbegin == it->rend()) {
         break;
       }
     }
     return cend();
   }
 
-  const_iterator erase(const T &key) {
-    if (empty()) {
-      return cend();
+  void pop_back() { erase(m_tail->get()); }
+
+  void pop_front() { erase(m_head->get()); }
+
+  std::optional<T> extract(const T &key) {
+    auto node_ptr = erase_node(key);
+    if (node_ptr) {
+      return std::move(node_ptr->get());
     }
-    if (m_tail != nullptr && (m_comparator(m_tail->get(), key) ||
-                              m_comparator(key, m_head->get()))) {
-      return cend();
+    return {};
+  }
+
+  std::optional<T> extract(const_iterator position) {
+    if (position != nullptr) {
+      return extract(*position);
+    }
+    return {};
+  }
+
+  const_iterator erase(const T &key) {
+    auto node_ptr = erase_node(key);
+    return node_ptr ? node_ptr->get_next(0) : cend();
+  }
+
+private:
+  template <typename U = T> node_type *create_node(U &&value) {
+    return new node_type(std::forward<U>(value), m_generator);
+  }
+
+  std::unique_ptr<node_type> erase_node(const T &key) {
+    if (empty() || value_out_of_range(key)) {
+      return nullptr;
     }
     if (m_head != nullptr && m_head->get() == key) {
       if (m_head == m_tail) {
@@ -395,21 +442,18 @@ public:
       }
       --m_size;
       auto next = m_head->get_next(0);
-      delete m_head;
+      auto old_head = m_head;
       m_head = next;
-      return cbegin();
+      return std::unique_ptr<node_type>(old_head);
     }
 
     std::array<node_type *, MaxNodeSize> observers{nullptr};
     auto obs = observers.begin();
     node_type *found = nullptr;
-    auto it = m_head;
-    while (it != nullptr) {
+    for (auto it = m_head; it != nullptr;) {
       auto rbegin = it->rbegin();
-      auto rend = it->rend();
-      while (rbegin != rend) {
+      for (; rbegin != it->rend(); ++rbegin) {
         if (*rbegin == nullptr) {
-          ++rbegin;
           continue;
         }
         const auto &value = (*rbegin)->get();
@@ -420,46 +464,42 @@ public:
           it = *rbegin;
           break;
         }
-        ++rbegin;
       }
-      if (rbegin == rend) {
+      if (rbegin == it->rend()) {
         break;
       }
     }
-    if (found != nullptr) {
-      --m_size;
-      auto result = found->get_next(0);
-      for (auto o : observers) {
-        if (o == nullptr) {
-          continue;
-        }
-        for (auto rit = o->rbegin(); rit != o->rend(); ++rit) {
-          if (*rit == found) {
-            *rit = nullptr;
-          }
-        }
-        if (o->get_next(0) == nullptr) {
-          o->get_next(0) = result;
-        }
-      }
-      if (found == m_tail) {
-        m_tail = *(obs - 1);
-      }
-      delete found;
-      for (auto o : observers) {
-        if (o != nullptr) {
-          o->fill_nexts();
-        }
-      }
-      return const_iterator{result};
+    if (found == nullptr) {
+      return nullptr;
     }
-
-    return cend();
+    --m_size;
+    for (auto o : observers) {
+      if (o == nullptr) {
+        continue;
+      }
+      for (auto rit = o->rbegin(); rit != o->rend(); ++rit) {
+        if (*rit == found) {
+          *rit = nullptr;
+        }
+      }
+      if (o->get_next(0) == nullptr) {
+        o->get_next(0) = found->get_next(0);
+      }
+    }
+    if (found == m_tail) {
+      m_tail = *(obs - 1);
+    }
+    for (auto o : observers) {
+      if (o != nullptr) {
+        o->fill_nexts();
+      }
+    }
+    return std::unique_ptr<node_type>(found);
   }
 
-private:
-  template <typename U = T> node_type *create_node(U &&value) {
-    return new node_type(std::forward<U>(value), m_generator);
+  bool value_out_of_range(const T &value) const noexcept {
+    return m_tail != nullptr && (m_comparator(m_tail->get(), value) ||
+                                 m_comparator(value, m_head->get()));
   }
 
   void clear_elements() noexcept {
@@ -494,18 +534,18 @@ private:
   public:
     using difference_type = ptrdiff_t;
     using value_type = T;
-    iterator_impl() = default;
-    iterator_impl(IteratorValueType *val_ptr) : m_it(val_ptr) {}
+    iterator_impl() noexcept = default;
+    iterator_impl(IteratorValueType *val_ptr) noexcept : m_it(val_ptr) {}
 
-    const value_type &operator*() const {
+    const value_type &operator*() const noexcept {
       assert(m_it != nullptr);
       return m_it->get();
     }
-    iterator_impl &operator++() {
+    iterator_impl &operator++() noexcept {
       assert(m_it != nullptr);
       m_it = m_it->get_next(0);
     }
-    iterator_impl operator++(int) {
+    iterator_impl operator++(int) noexcept {
       auto copy = *this;
       assert(m_it != nullptr);
       m_it = m_it->get_next(0);
@@ -525,7 +565,8 @@ template <typename T, typename CompareLhs, typename CompareRhs, int ProbLhs,
           typename Allocator = std::allocator<T>>
 bool operator==(
     const skip_list<T, CompareLhs, ProbLhs, MaxNodeSizeLhs, Allocator> &lhs,
-    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator> &rhs) {
+    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator>
+        &rhs) noexcept {
   return std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
 }
 
@@ -534,7 +575,8 @@ template <typename T, typename CompareLhs, typename CompareRhs, int ProbLhs,
           typename Allocator = std::allocator<T>>
 auto operator<=>(
     const skip_list<T, CompareLhs, ProbLhs, MaxNodeSizeLhs, Allocator> &lhs,
-    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator> &rhs) {
+    const skip_list<T, CompareRhs, ProbRhs, MaxNodeSizeRhs, Allocator>
+        &rhs) noexcept {
   return std::lexicographical_compare_three_way(
       lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend(),
       [](const T &lhs_l, const T &rhs_l) { return lhs_l <=> rhs_l; });

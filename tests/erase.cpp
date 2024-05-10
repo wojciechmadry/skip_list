@@ -200,7 +200,7 @@ TEST(Erase, EraseAndFind) {
   ASSERT_EQ(calls, 1u);
 }
 
-TEST(Erase, EraseAndInsert) {
+TEST(Erase, WithoutEraseAndInsert) {
   skip_list<int> sl;
   auto emplace = [&](int value, int seed) {
     auto SEED = std::seed_seq({seed});
@@ -209,67 +209,80 @@ TEST(Erase, EraseAndInsert) {
     sl.emplace(value, &visited);
     return visited;
   };
-  ASSERT_EQ(emplace(0, 0), 0);
-  ASSERT_NO_THROW(sl.erase(0));
-  ASSERT_EQ(emplace(0, 0), 0);
-
-  ASSERT_EQ(emplace(1, 1), 0);
-  ASSERT_NO_THROW(sl.erase(1));
-  ASSERT_EQ(emplace(1, 1), 0);
-
-  ASSERT_EQ(emplace(2, 2), 2);
-  ASSERT_NO_THROW(sl.erase(2));
-  ASSERT_EQ(emplace(2, 2), 2);
-
-  ASSERT_EQ(emplace(3, 3), 2);
+  int i = 0;
+  ASSERT_EQ(emplace(0, i++), 0);
+  ASSERT_EQ(emplace(1, i++), 0);
+  ASSERT_EQ(emplace(2, i++), 2);
+  ASSERT_EQ(emplace(3, i++), 2);
+  ASSERT_EQ(emplace(4, i++), 3);
+  ASSERT_EQ(emplace(5, i++), 3);
+  ASSERT_EQ(emplace(6, i++), 3);
+  ASSERT_EQ(emplace(7, i++), 4);
+  ASSERT_EQ(emplace(8, i++), 4);
+  ASSERT_EQ(emplace(9, i++), 5);
+  ASSERT_EQ(emplace(-1, i++), 0);
+  ASSERT_EQ(emplace(10, i++), 6);
+  ASSERT_EQ(emplace(11, i++), 7);
+  ASSERT_EQ(emplace(5, i++), 4);
+  ASSERT_EQ(emplace(15, i++), 7);
+  ASSERT_EQ(emplace(12, i++), 7);
   ASSERT_NO_THROW(sl.erase(3));
-  ASSERT_EQ(emplace(3, 3), 2);
-
-  ASSERT_EQ(emplace(4, 4), 3);
   ASSERT_NO_THROW(sl.erase(4));
-  ASSERT_EQ(emplace(4, 4), 3);
-
-  ASSERT_EQ(emplace(5, 5), 3);
   ASSERT_NO_THROW(sl.erase(5));
-  ASSERT_EQ(emplace(5, 5), 3);
-
-  ASSERT_EQ(emplace(6, 6), 3);
+  ASSERT_NO_THROW(sl.erase(5));
   ASSERT_NO_THROW(sl.erase(6));
-  ASSERT_EQ(emplace(6, 6), 3);
-
-  ASSERT_EQ(emplace(7, 7), 4);
   ASSERT_NO_THROW(sl.erase(7));
-  ASSERT_EQ(emplace(7, 7), 4);
-
-  ASSERT_EQ(emplace(8, 8), 4);
-  ASSERT_NO_THROW(sl.erase(8));
-  ASSERT_EQ(emplace(8, 8), 4);
-
-  ASSERT_EQ(emplace(9, 9), 5);
-  ASSERT_NO_THROW(sl.erase(9));
-  ASSERT_EQ(emplace(9, 9), 5);
-
-  ASSERT_EQ(emplace(-1, 10), 0);
+  ASSERT_NO_THROW(sl.erase(15));
   ASSERT_NO_THROW(sl.erase(-1));
-  ASSERT_EQ(emplace(-1, 10), 0);
-
-  ASSERT_EQ(emplace(10, 11), 6);
+  ASSERT_NO_THROW(sl.erase(0));
+  ASSERT_NO_THROW(sl.erase(1));
   ASSERT_NO_THROW(sl.erase(10));
-  ASSERT_EQ(emplace(10, 11), 6);
+  ASSERT_NO_THROW(sl.erase(9));
+  skip_list<int>::size_type visited = 0;
+  ASSERT_NO_THROW(sl.emplace(13, &visited));
+  ASSERT_EQ(visited, 2) << "Skip list balancing error";
+}
 
-  ASSERT_EQ(emplace(11, 12), 7);
-  ASSERT_NO_THROW(sl.erase(11));
-  ASSERT_EQ(emplace(11, 12), 7);
+TEST(Erase, EraseAndInsert) {
+  skip_list<int> sl;
+  int seed = 0;
+  auto emplace = [&](int value, int should_visit) {
+    auto SEED = std::seed_seq({seed++});
+    sl.set_seed(SEED);
+    std::size_t visited = 0;
+    sl.emplace(value, &visited);
+    ASSERT_NO_THROW(sl.erase(value)) << "Value = " << value;
+    sl.set_seed(SEED);
+    std::size_t visited_after_remove = 0;
+    sl.emplace(value, &visited_after_remove);
+    ASSERT_EQ(visited, visited_after_remove) << "Value = " << value;
+    ASSERT_EQ(should_visit, visited) << "Value = " << value;
+  };
+  emplace(0, 0);
+  emplace(1, 0);
+  emplace(2, 2);
+  emplace(3, 2);
+  emplace(4, 3);
+  emplace(5, 3);
+  emplace(6, 3);
+  emplace(7, 4);
+  emplace(8, 4);
+  emplace(9, 5);
+  emplace(-1, 0);
+  emplace(10, 6);
+  emplace(11, 7);
+  emplace(5, 4);
+  emplace(15, 7);
+  emplace(12, 7);
+  emplace(13, 5);
+  emplace(14, 6);
 
-  ASSERT_EQ(emplace(5, 13), 4);
-  ASSERT_NO_THROW(sl.erase(5));
-  ASSERT_EQ(emplace(5, 13), 4);
   auto it = sl.begin();
   for (int i = -1; i <= 5; ++i, ++it) {
     ASSERT_NE(it, nullptr);
     ASSERT_EQ(*it, i);
   }
-  for (int i = 5; i <= 11; ++i, ++it) {
+  for (int i = 5; i <= 15; ++i, ++it) {
     ASSERT_NE(it, nullptr);
     ASSERT_EQ(*it, i);
   }
@@ -296,4 +309,132 @@ TEST(Erase, EraseAndInsertRandomized) {
     ASSERT_NO_THROW(sl.push(val, &visited_after_erase));
     ASSERT_EQ(visited, visited_after_erase);
   }
+}
+
+TEST(Erase, PopBack) {
+  for (int seed = -150; seed <= 150; ++seed) {
+    skip_list<int> sl;
+    auto SEED = std::seed_seq({seed});
+    sl.set_seed(SEED);
+    for (int i = -10; i <= 10; ++i) {
+      sl.emplace(i);
+    }
+    int last_el = 10;
+    while (!sl.empty()) {
+      ASSERT_EQ(sl.back(), last_el--);
+      ASSERT_NO_THROW(sl.pop_back());
+    }
+    ASSERT_EQ(last_el, -11);
+    ASSERT_TRUE(sl.empty());
+    ASSERT_EQ(sl.begin(), nullptr);
+  }
+}
+
+TEST(Erase, PopFront) {
+  for (int seed = -15; seed <= 15; ++seed) {
+    skip_list<int> sl;
+    auto SEED = std::seed_seq({seed});
+    sl.set_seed(SEED);
+    for (int i = -10; i <= 10; ++i) {
+      sl.emplace(i);
+    }
+    int last_el = -10;
+    while (!sl.empty()) {
+      ASSERT_EQ(sl.front(), last_el++);
+      ASSERT_NO_THROW(sl.pop_front());
+    }
+    ASSERT_EQ(last_el, 11);
+    ASSERT_TRUE(sl.empty());
+    ASSERT_EQ(sl.begin(), nullptr);
+  }
+}
+
+TEST(Erase, Extract_1000) {
+  skip_list<int> sl;
+  auto SEED = std::seed_seq{9999};
+  ASSERT_NO_THROW(sl.set_seed(SEED));
+  for (int i = -500; i < 500; ++i) {
+    ASSERT_NO_THROW(sl.emplace(i));
+  }
+  ASSERT_EQ(sl.size(), 1000);
+  std::uniform_int_distribution<int> uniform_dist(-600, 600);
+  std::mt19937 gen(SEED);
+  std::size_t erasedElements = 0;
+  for (int i = 0; i < 888; ++i) {
+    const auto rnd_val = uniform_dist(gen);
+    auto found = sl.find(rnd_val);
+    if (rnd_val >= 500 || rnd_val < -500) {
+      ASSERT_EQ(found, nullptr);
+      ASSERT_EQ(found, sl.end());
+      ASSERT_FALSE(sl.extract(rnd_val).has_value());
+      continue;
+    }
+    auto isFound = found != sl.end();
+    auto extracted_val = sl.extract(rnd_val);
+    if (!isFound) {
+      ASSERT_FALSE(extracted_val.has_value());
+    } else {
+      ++erasedElements;
+      found = sl.find(rnd_val);
+      ASSERT_EQ(found, sl.end());
+      ASSERT_EQ(sl.size(), 1000u - erasedElements);
+      ASSERT_EQ(extracted_val.value(), rnd_val);
+    }
+  }
+  ASSERT_EQ(sl.size(), 1000u - erasedElements);
+  auto it = sl.begin();
+  int prevNum = std::numeric_limits<int>::min();
+  for (std::size_t i = 0u; i < sl.size(); ++i, ++it) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_GT(*it, prevNum);
+    prevNum = *it;
+    const auto found = sl.find(*it);
+    ASSERT_NE(found, nullptr);
+    ASSERT_EQ(*found, *it);
+  }
+  ASSERT_EQ(it, sl.end());
+}
+
+TEST(Erase, ExtractUniquePtr) {
+  auto comp = [](const std::unique_ptr<int> &lhs,
+                 const std::unique_ptr<int> &rhs) { return *lhs < *rhs; };
+
+  skip_list<std::unique_ptr<int>, decltype(comp)> sl;
+  auto SEED = std::seed_seq{37};
+  ASSERT_NO_THROW(sl.set_seed(SEED));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(3)));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(2)));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(4)));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(5)));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(0)));
+  ASSERT_NO_THROW(sl.push(std::make_unique<int>(1)));
+  auto it = sl.begin();
+  ASSERT_EQ(sl.size(), 6u);
+  // {0, 1, 2, 3, 4, 5}
+  for (int i = 0; i <= 5; ++i, ++it) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_NE(*it, nullptr);
+    ASSERT_EQ(**it, i);
+  }
+  it = sl.begin();
+  ASSERT_NO_THROW(++it);
+  auto extracted = sl.extract(it);
+  ASSERT_TRUE(extracted.has_value());
+  ASSERT_EQ(*extracted.value(), 1);
+  extracted = sl.extract(sl.cbegin());
+  ASSERT_TRUE(extracted.has_value());
+  ASSERT_EQ(*extracted.value(), 0);
+  ASSERT_EQ(sl.size(), 4u);
+  // {2, 3, 4, 5}
+  it = sl.begin();
+  for (int i = 2; i <= 5; ++i) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_NE(*it, nullptr);
+    ASSERT_EQ(**it, i);
+    extracted = sl.extract(it);
+    ASSERT_TRUE(extracted.has_value());
+    ASSERT_EQ(*extracted.value(), i);
+    it = sl.begin();
+  }
+  ASSERT_TRUE(sl.empty());
 }

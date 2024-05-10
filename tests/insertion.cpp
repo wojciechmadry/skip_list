@@ -349,3 +349,25 @@ TEST(Insertion, PushInitList) {
     ASSERT_EQ(i, *it);
   }
 }
+
+TEST(Insertion, InsertWithMoveIterator) {
+  auto comp = [](const std::unique_ptr<int> &lhs,
+                 const std::unique_ptr<int> &rhs) { return *lhs < *rhs; };
+
+  std::vector<std::unique_ptr<int>> v;
+  v.emplace_back(std::make_unique<int>(-1));
+  v.emplace_back(std::make_unique<int>(0));
+  v.emplace_back(std::make_unique<int>(1));
+  v.emplace_back(std::make_unique<int>(2));
+  skip_list<std::unique_ptr<int>, decltype(comp)> sl;
+  sl.insert(std::move_iterator(v.begin()), std::move_iterator(v.end()));
+  v.clear();
+  ASSERT_TRUE(v.empty());
+  ASSERT_EQ(sl.size(), 4u);
+  auto it = sl.begin();
+  for (int i = -1; i <= 2; ++i, ++it) {
+    ASSERT_NE(it, nullptr);
+    ASSERT_NE(*it, nullptr);
+    ASSERT_EQ(**it, i);
+  }
+}
