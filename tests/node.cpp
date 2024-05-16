@@ -10,8 +10,8 @@ TEST(Node, Constructor) {
   ASSERT_NO_THROW(node<int>(5, gen));
   constexpr std::size_t MAX_SIZE = 10u;
   node<int, MAX_SIZE> nd(12, gen);
-  ASSERT_EQ(nd.size(), 6);
-  ASSERT_LE(nd.size(), MAX_SIZE);
+  ASSERT_EQ(nd.capacity(), 6);
+  ASSERT_LE(nd.capacity(), MAX_SIZE);
   ASSERT_EQ(nd.get(), 12);
   for (std::size_t i = 0u; i < MAX_SIZE; ++i) {
     ASSERT_EQ(nd.get_next(i), nullptr);
@@ -25,13 +25,13 @@ TEST(Node, clear_nexts) {
   std::mt19937 gen(SEED);
   node<int> nd0(1, gen);
   node<int> nd1(2, gen);
-  for (std::size_t i = 0u; i < nd0.size(); ++i) {
+  for (std::size_t i = 0u; i < nd0.capacity(); ++i) {
     ASSERT_EQ(nd0.get_next(i), nullptr);
     nd0.get_next(i) = &nd1;
     ASSERT_EQ(nd0.get_next(i), &nd1);
   }
   ASSERT_NO_THROW(nd0.clear_nexts());
-  for (std::size_t i = 0u; i < nd0.size(); ++i) {
+  for (std::size_t i = 0u; i < nd0.capacity(); ++i) {
     ASSERT_EQ(nd0.get_next(i), nullptr);
   }
 }
@@ -42,7 +42,7 @@ TEST(Node, rbegin_rend) {
   std::mt19937 gen(SEED);
   node<int, MAX_SIZE> nd0(1, gen);
   node<int, MAX_SIZE> nd1(2, gen);
-  ASSERT_EQ(nd0.size(), 3);
+  ASSERT_EQ(nd0.capacity(), 3);
   nd0.get_next(0) = &nd1;
   nd0.get_next(1) = &nd1;
   nd0.get_next(2) = &nd1;
@@ -51,7 +51,7 @@ TEST(Node, rbegin_rend) {
     ASSERT_NE(*it, nullptr);
     ASSERT_EQ(*it, &nd1);
   }
-  ASSERT_EQ(count_iterations, nd0.size());
+  ASSERT_EQ(count_iterations, nd0.capacity());
 }
 
 TEST(Node, fill_nexts_insert_third) {
@@ -61,13 +61,13 @@ TEST(Node, fill_nexts_insert_third) {
   node<int> nd1(2, gen);
   ASSERT_EQ(nd0.get(), 1);
   ASSERT_EQ(nd1.get(), 2);
-  ASSERT_GT(nd0.size(), 2);
-  ASSERT_GT(nd1.size(), 2);
-  for (std::size_t i = 0u; i < nd0.size(); ++i) {
+  ASSERT_GT(nd0.capacity(), 2);
+  ASSERT_GT(nd1.capacity(), 2);
+  for (std::size_t i = 0u; i < nd0.capacity(); ++i) {
     nd0.get_next(i) = &nd1;
   }
   node<int> nd2(3, gen);
-  ASSERT_GT(nd2.size(), 2);
+  ASSERT_GT(nd2.capacity(), 2);
   nd2.get_next(0) = &nd0;
   ASSERT_NO_THROW(nd2.fill_nexts());
 }
@@ -77,11 +77,11 @@ TEST(Node, fill_nexts_1) {
   std::mt19937 gen(SEED);
   node<int> nd(1, gen);
   ASSERT_EQ(nd.get(), 1);
-  ASSERT_GT(nd.size(), 2);
+  ASSERT_GT(nd.capacity(), 2);
   nd.get_next(0) = &nd;
   ASSERT_EQ(&nd, nd.get_next(0));
   ASSERT_NO_THROW(nd.fill_nexts());
-  for (std::size_t i = 0u; i < nd.size(); ++i) {
+  for (std::size_t i = 0u; i < nd.capacity(); ++i) {
     ASSERT_EQ(&nd, nd.get_next(i));
   }
 }
@@ -95,7 +95,7 @@ TEST(Node, fill_nexts_5) {
   for (std::size_t i = 0u; i < SIZE; ++i) {
     ASSERT_NO_THROW(nodes.emplace_back(i, gen));
     ASSERT_EQ(nodes.back().get(), i);
-    ASSERT_GT(nodes.back().size(), 0);
+    ASSERT_GT(nodes.back().capacity(), 0);
   }
   /*
    *   0---0
@@ -146,7 +146,7 @@ TEST(Node, fill_nexts_10) {
   for (std::size_t i = 0u; i < SIZE; ++i) {
     ASSERT_NO_THROW(nodes.emplace_back(i, gen));
     ASSERT_EQ(nodes.back().get(), i);
-    ASSERT_GT(nodes.back().size(), 0);
+    ASSERT_GT(nodes.back().capacity(), 0);
   }
   /*
    *       0   0

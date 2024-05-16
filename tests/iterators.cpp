@@ -249,7 +249,7 @@ TEST(Iterators, Inserter) {
   std::transform(sl.begin(), sl.end(), std::inserter(sl_1, sl_1.end()),
                  [&i](int v) mutable { return v + (i++); });
   auto it = sl_1.begin();
-  for (int i = 6; i <= 8; ++i, ++it) {
+  for (i = 6; i <= 8; ++i, ++it) {
     ASSERT_EQ(*it, i);
   }
   skip_list<int> sl_2;
@@ -311,7 +311,7 @@ TEST(Iterators, Algorithms) {
   // copy
   {
     std::copy(sl.begin(), sl.end(), std::inserter(sl1, sl1.begin()));
-    auto it = sl.begin();
+    it = sl.begin();
     auto it1 = sl1.begin();
     while (it != sl.end()) {
       ASSERT_NE(it, it1);
@@ -329,7 +329,7 @@ TEST(Iterators, Algorithms) {
   {
     std::transform(sl.begin(), sl.end(), std::inserter(sl1, sl1.begin()),
                    [](int v) { return std::abs(v) + 1; });
-    auto it = sl.begin();
+    it = sl.begin();
     auto it1 = sl1.begin();
     std::vector<int> sorted;
     while (it != sl.end()) {

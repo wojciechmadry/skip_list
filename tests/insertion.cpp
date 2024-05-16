@@ -135,7 +135,7 @@ TEST(Insertion, VisitedNodesEmplace) {
   for (int i = 0; i < 20; ++i) {
     // Code only to check what size of node is
     node<int> ng(i, gen);
-    ASSERT_GE(ng.size(), 1);
+    ASSERT_GE(ng.capacity(), 1);
     // std::cout << i << " = " << ng.size() << '\n';
   }
   auto emplace = [&](int value) {
@@ -291,7 +291,7 @@ TEST(Insertion, VisitedNodesReversedEmplace) {
   for (int i = 0; i < 20; ++i) {
     // Code only to check what size of node is
     node<int> ng(i, gen);
-    ASSERT_GE(ng.size(), 1);
+    ASSERT_GE(ng.capacity(), 1);
     // std::cout << i << " = " << ng.size() << '\n';
   }
   auto emplace = [&](int value) {

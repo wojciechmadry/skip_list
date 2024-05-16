@@ -12,7 +12,7 @@ alias(
 
 alias(
   name = "test",
-  actual = "//tests:skip_list_tests",
+  actual = "//tests:skip_list_gtest_tests",
 )
 
 alias(
@@ -20,6 +20,17 @@ alias(
   actual = ":refresh_compile_commands"
 )
 
+filegroup(
+       name = "clang_tidy_config",
+       srcs = [".clang-tidy"],
+       visibility = ["//visibility:public"],
+)
+
+filegroup(
+       name = "cppcheck_flags",
+       srcs = [".cppcheck"],
+       visibility = ["//visibility:public"],
+)
 
 refresh_compile_commands(
     name = "refresh_compile_commands",

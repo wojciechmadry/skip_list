@@ -7,15 +7,12 @@ Project:
 [X] Generate compile_commands.json
 [X] Dazel - Set .cache folder to internal folder
 [X] Add checking if code is formatted
-[ ] GCoverity
-[ ] clang-tidy/cppcheck
+[X] CI clang++/gcc build
+[X] CI GCoverity
+[X] CI clang-tidy/cppcheck
 [ ] CI valgrind {?}
-[ ] CI clang++/gcc build
-[ ] CI clang-tidy/cppcheck
 [ ] Install .hpp files
 [ ] Create readme with examples
-[ ] Change visibility of Bazel targets
-[ ] Come up with how to compile C++ files with C++ compiler
 
 Code:
 
@@ -28,6 +25,10 @@ Code:
 [X] Test list with unique_ptr and string
 [X] How to remove and move element from list - Extract
 [X] Check noexcept for all functions
-[ ] Check custom allocator
-[ ] Add constexpr +  Test
-[ ] Unit test in GTest
+[X] 100% code cov
+[X] Add compiler flags
+[X] Check custom allocator
+[X] Unit test in GTest
+[X] lower/upper bounds
+[ ] check pmr allocator
+

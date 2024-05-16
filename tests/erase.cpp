@@ -437,4 +437,6 @@ TEST(Erase, ExtractUniquePtr) {
     it = sl.begin();
   }
   ASSERT_TRUE(sl.empty());
+  auto not_existing = sl.begin();
+  ASSERT_FALSE(sl.extract(not_existing).has_value());
 }

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "skip_list.hpp"
@@ -83,8 +84,8 @@ TEST(Operators, Assign) {
   std::vector<int> v{-3, -2, -1, 3, 2, 1, 0};
   ASSERT_NO_THROW(sl.assign(4, 1));
   ASSERT_EQ(sl.size(), 4);
-  for (auto v : sl) {
-    ASSERT_EQ(v, 1);
+  for (auto value : sl) {
+    ASSERT_EQ(value, 1);
   }
   ASSERT_NO_THROW(sl.assign(v.begin(), v.end()));
   std::sort(v.begin(), v.end());
