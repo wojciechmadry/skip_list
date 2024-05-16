@@ -1,0 +1,30 @@
+name: CodeCoverage
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: |
+          sudo apt install apt-transport-https curl gnupg -y
+          curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor >bazel-archive-keyring.gpg
+          sudo mv bazel-archive-keyring.gpg /usr/share/keyrings
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+          sudo apt update
+          sudo apt install bazel lcov -y
+          pip3 install dazel
+      - name: Generate coverage
+        run: dazel coverage //tests:skip_list_gtest_tests --combined_report=lcov --instrumentation_filter="/include"
+      - name: Generate html
+        run: genhtml bazel-out/_coverage/_coverage_report.dat -o test_coverage
+      - name: Check code coverage is 100 percent
+        run: |
+          export COVERAGE_VAL=$(genhtml bazel-out/_coverage/_coverage_report.dat -o test_coverage | grep lines | grep "%" | cut -d " " -f 4 | tr -d '%')
+          test "${COVERAGE_VAL}" = "100.0"

@@ -102,9 +102,9 @@ TEST(Initialization, ConstructorIterators) {
   skip_list<int> second_sl(sl_copy_from.begin(), sl_copy_from.end());
   ASSERT_EQ(sl_copy_from.size(), second_sl.size());
   auto second_it = second_sl.begin();
-  for (auto v : sl_copy_from) {
+  for (auto value : sl_copy_from) {
     ASSERT_NE(second_it, nullptr);
-    ASSERT_EQ(v, *second_it);
+    ASSERT_EQ(value, *second_it);
     ++second_it;
   }
 }

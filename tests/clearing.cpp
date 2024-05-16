@@ -2,25 +2,35 @@
 #include <exception>
 #include <new>
 #include <random>
+
+#include "skip_list.hpp"
+#include <gtest/gtest.h>
+
+// NOLINTBEGIN
 static std::size_t new_calls = 0;
 static std::size_t delete_calls = 0;
+
 // no inline, required by [replacement.functions]/3
 void *operator new(std::size_t sz) {
-  if (sz == 0)
+  if (sz == 0) {
     ++sz; // avoid std::malloc(0) which may return nullptr on success
+  }
   new_calls++;
-  if (void *ptr = std::malloc(sz))
+  if (void *ptr = std::malloc(sz)) {
     return ptr;
+  }
 
   throw std::bad_alloc{}; // required by [new.delete.single]/3
 }
 
 void *operator new[](std::size_t sz) {
-  if (sz == 0)
+  if (sz == 0) {
     ++sz; // avoid std::malloc(0) which may return nullptr on success
+  }
   new_calls++;
-  if (void *ptr = std::malloc(sz))
+  if (void *ptr = std::malloc(sz)) {
     return ptr;
+  }
 
   throw std::bad_alloc{}; // required by [new.delete.single]/3
 }
@@ -31,6 +41,7 @@ void operator delete(void *ptr) noexcept {
 }
 
 void operator delete(void *ptr, std::size_t size) noexcept {
+  (void)size;
   delete_calls++;
   std::free(ptr);
 }
@@ -41,13 +52,11 @@ void operator delete[](void *ptr) noexcept {
 }
 
 void operator delete[](void *ptr, std::size_t size) noexcept {
+  (void)size;
   delete_calls++;
   std::free(ptr);
 }
 
-#include <gtest/gtest.h>
-
-#include "skip_list.hpp"
 using namespace sl;
 
 TEST(Clearing, Destructor) {
@@ -126,9 +135,9 @@ TEST(Clearing, ClearFunctionRandomSeed) {
     new_calls = 0;
     delete_calls = 0;
     static constexpr std::size_t NEW_SIZE = 10u;
-    for (std::size_t i = 1u; i <= NEW_SIZE; ++i) {
-      ASSERT_NO_THROW(sl.push(i));
-      ASSERT_EQ(new_calls, i);
+    for (std::size_t j = 1u; j <= NEW_SIZE; ++j) {
+      ASSERT_NO_THROW(sl.push(j));
+      ASSERT_EQ(new_calls, j);
     }
     ASSERT_EQ(new_calls, NEW_SIZE);
     ASSERT_EQ(delete_calls, 0u);
@@ -152,11 +161,11 @@ TEST(Clearing, ClearErase) {
   ASSERT_EQ(delete_calls, 0u);
   std::size_t deleted_calls = 1u;
   for (std::size_t i = NEW_SIZE / 2; i <= NEW_SIZE; ++i) {
-    ASSERT_NO_THROW(sl.erase(i));
+    ASSERT_NO_THROW(sl.erase(static_cast<int>(i)));
     ASSERT_EQ(delete_calls, deleted_calls++);
   }
   for (std::size_t i = 1; i < NEW_SIZE / 2; ++i) {
-    ASSERT_NO_THROW(sl.erase(i));
+    ASSERT_NO_THROW(sl.erase(static_cast<int>(i)));
     ASSERT_EQ(delete_calls, deleted_calls++);
   }
   ASSERT_EQ(delete_calls, new_calls);
@@ -193,3 +202,19 @@ TEST(Clearing, ClearEraseInsert) {
     ++it;
   }
 }
+
+TEST(Clearing, ExceptionInClear) {
+  struct custom_comp {
+    bool operator()(const int &lhs, const int &rhs) { return lhs > rhs; }
+    custom_comp operator=(custom_comp &&) {
+      throw std::runtime_error("runtime error");
+    }
+  };
+  auto testThrow = []() {
+    skip_list<int, custom_comp> sl;
+    ASSERT_NO_THROW(sl.push({1, 2, 3}));
+    ASSERT_ANY_THROW(sl.clear());
+  };
+  ASSERT_NO_THROW(testThrow());
+}
+// NOLINTEND
