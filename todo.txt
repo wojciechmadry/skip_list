@@ -10,8 +10,7 @@ Project:
 [X] CI clang++/gcc build
 [X] CI GCoverity
 [X] CI clang-tidy/cppcheck
-[ ] CI valgrind {?}
-[ ] Install .hpp files
+[X] CI valgrind {?}
 [ ] Create readme with examples
 
 Code:
