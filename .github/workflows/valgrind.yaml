@@ -1,0 +1,26 @@
+name: Valgrind
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Dependencies
+        run: |
+          sudo apt install apt-transport-https curl gnupg -y
+          curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor >bazel-archive-keyring.gpg
+          sudo mv bazel-archive-keyring.gpg /usr/share/keyrings
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+          sudo apt update
+          sudo apt install bazel -y
+          pip3 install dazel
+      - name: Build tests
+        run: dazel test //tests:skip_list_gtest_tests
+      - name: Run valgrind
+        run: docker exec dazel bash -c "ulimit -n 1024  && valgrind --leak-check=full --error-exitcode=1 ./bazel-bin/tests/skip_list_gtest_tests --gtest_filter=-Clearing.*"
