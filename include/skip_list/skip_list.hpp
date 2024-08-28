@@ -154,12 +154,7 @@ public:
   skip_list(std::initializer_list<T> init, const Allocator &alloc = Allocator())
       : skip_list(init.begin(), init.end(), alloc) {}
 
-  ~skip_list() noexcept {
-    try {
-      clear();
-    } catch (...) {
-    }
-  }
+  ~skip_list() noexcept { clear_elements(); }
 
   skip_list &operator=(const skip_list &other) {
     if (this == &other) {
