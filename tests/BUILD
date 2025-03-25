@@ -16,7 +16,7 @@ clang_tidy_test(
   ],
   use_flags = False,
     visibility = ["//visibility:public"],
-  deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
+  deps = ["@googletest//:gtest_main", "//include/skip_list:skip_list"],
 )
 
 cppcheck_test(
@@ -25,7 +25,7 @@ cppcheck_test(
     "//include/skip_list:skip_list_hdr",
   ],
   visibility = ["//visibility:public"],
-deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
+  deps = ["@googletest//:gtest_main", "//include/skip_list:skip_list"],
   cppcheck_flags = "//:cppcheck_flags",
 )
 
@@ -35,6 +35,6 @@ cc_test(
   srcs = [
       ":test_sources"
       ],
-  deps = ["@com_google_googletest//:gtest_main", "//include/skip_list:skip_list"],
+  deps = ["@googletest//:gtest_main", "//include/skip_list:skip_list"],
   visibility = ["//visibility:public"],
 )
