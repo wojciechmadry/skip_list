@@ -1,0 +1,7 @@
+#!/bin/bash
+if [ "$1" = "run" ]; then
+    shift
+    exec podman run --userns=keep-id "$@"
+else
+    exec podman "$@"
+fi

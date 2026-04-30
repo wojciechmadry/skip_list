@@ -23,8 +23,10 @@ jobs:
       - name: Generate coverage
         run: dazel coverage //tests:skip_list_gtest_tests --combined_report=lcov --instrumentation_filter="/include"
       - name: Generate html
-        run: genhtml bazel-out/_coverage/_coverage_report.dat -o test_coverage
+        run: |
+          podman cp dazel:bazel-out/_coverage/_coverage_report.dat _coverage_report.dat
+          genhtml _coverage_report.dat -o test_coverage
       - name: Check code coverage is 100 percent
         run: |
-          export COVERAGE_VAL=$(genhtml bazel-out/_coverage/_coverage_report.dat -o test_coverage | grep lines | grep "%" | cut -d " " -f 4 | tr -d '%')
+          export COVERAGE_VAL=$(genhtml _coverage_report.dat -o test_coverage | grep lines | grep "%" | cut -d " " -f 4 | tr -d '%')
           test "${COVERAGE_VAL}" = "100.0"
