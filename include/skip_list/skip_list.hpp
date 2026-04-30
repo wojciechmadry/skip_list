@@ -154,7 +154,26 @@ public:
   skip_list(std::initializer_list<T> init, const Allocator &alloc = Allocator())
       : skip_list(init.begin(), init.end(), alloc) {}
 
-  ~skip_list() noexcept { clear_elements(); }
+  ~skip_list() noexcept { clear(); }
+
+  void clear() noexcept {
+    m_size = 0U;
+    if (m_head == nullptr) {
+      return;
+    }
+    if (m_head == m_tail) {
+      delete_node(m_head);
+      m_tail = nullptr;
+      return;
+    }
+    while (m_head != m_tail) {
+      auto next{m_head->get_next(0U)};
+      delete_node(m_head);
+      m_head = next;
+    }
+    delete_node(m_tail);
+    m_head = nullptr;
+  }
 
   skip_list &operator=(const skip_list &other) {
     if (this == &other) {
@@ -197,13 +216,13 @@ public:
   }
 
   skip_list &operator=(std::initializer_list<T> ilist) {
-    clear_elements();
+    clear();
     std::copy(ilist.begin(), ilist.end(), std::inserter(*this, begin()));
     return *this;
   }
 
   void assign(size_type count, const T &value) {
-    clear_elements();
+    clear();
     while (count-- > 0U) {
       push(value);
     }
@@ -213,7 +232,7 @@ public:
     requires(!std::is_same_v<typename std::iterator_traits<InputIt>::value_type,
                              void>)
   void assign(InputIt first, InputIt last) {
-    clear_elements();
+    clear();
     std::copy(first, last, std::inserter(*this, begin()));
   }
 
@@ -244,13 +263,6 @@ public:
   difference_type max_size() const noexcept {
     return std::numeric_limits<difference_type>::max();
   };
-
-  void clear() {
-    m_comparator = Compare();
-    m_allocator = Allocator();
-    m_generator = std::mt19937{std::random_device{}()};
-    clear_elements();
-  }
 
   template <typename U>
   iterator emplace(U &&value, size_type *visited_nodes_counter = nullptr) {
@@ -380,7 +392,7 @@ public:
       push(std::move(it->get()));
       it = it->get_next(0U);
     }
-    other.clear_elements();
+    other.clear();
   }
 
   void merge(skip_list &&other) {
@@ -535,25 +547,6 @@ private:
   bool value_out_of_range(const T &value) const noexcept {
     return m_tail != nullptr && (m_comparator(m_tail->get(), value) ||
                                  m_comparator(value, m_head->get()));
-  }
-
-  void clear_elements() noexcept {
-    m_size = 0U;
-    if (m_head == nullptr) {
-      return;
-    }
-    if (m_head == m_tail) {
-      delete_node(m_head);
-      m_tail = nullptr;
-      return;
-    }
-    while (m_head != m_tail) {
-      auto next{m_head->get_next(0U)};
-      delete_node(m_head);
-      m_head = next;
-    }
-    delete_node(m_tail);
-    m_head = nullptr;
   }
 
   template <typename Comparator> const_iterator bound_impl(const T &key) const {
