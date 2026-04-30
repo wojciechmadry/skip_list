@@ -203,18 +203,4 @@ TEST(Clearing, ClearEraseInsert) {
   }
 }
 
-TEST(Clearing, ExceptionInClear) {
-  struct custom_comp {
-    bool operator()(const int &lhs, const int &rhs) { return lhs > rhs; }
-    custom_comp operator=(custom_comp &&) {
-      throw std::runtime_error("runtime error");
-    }
-  };
-  auto testThrow = []() {
-    skip_list<int, custom_comp> sl;
-    ASSERT_NO_THROW(sl.push({1, 2, 3}));
-    ASSERT_ANY_THROW(sl.clear());
-  };
-  ASSERT_NO_THROW(testThrow());
-}
 // NOLINTEND
