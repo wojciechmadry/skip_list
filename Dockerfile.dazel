@@ -1,16 +1,17 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
-RUN apt update \
-    && apt install -y apt-transport-https curl gnupg \
-    && curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor >bazel-archive-keyring.gpg \
-    && mv bazel-archive-keyring.gpg /usr/share/keyrings \
-    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/bazel-archive-keyring.gpg] https://storage.googleapis.com/bazel-apt stable jdk1.8" | tee /etc/apt/sources.list.d/bazel.list \
-    && apt update \
-    && apt install -y bazel
+RUN apt update && apt install -y curl \
+    && curl -fsSL -o /usr/local/bin/bazel \
+       https://github.com/bazelbuild/bazel/releases/download/7.4.1/bazel-7.4.1-linux-x86_64 \
+    && chmod +x /usr/local/bin/bazel \
+    && ln -sf /usr/local/bin/bazel /usr/bin/bazel
 
 # Install project dependencies
 RUN apt update \
     && apt install -y \
+    build-essential \
+    gcc \
+    g++ \
     python3 \
     git \
     clang \
@@ -20,9 +21,15 @@ RUN apt update \
 
 ARG UID=1000
 ARG GID=1000
-RUN groupadd -g $GID -o skiplist
-RUN useradd -m -u $UID -g $GID -o -s /bin/bash skiplist
+ARG USERNAME=skiplist
+RUN userdel -r ubuntu 2>/dev/null || true && \
+    groupadd -g ${GID} ${USERNAME} && \
+    useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNAME} && \
+    mkdir -p /home/${USERNAME}/.cache && \
+    mkdir -p /tmp/dazel && \
+    chown -R ${UID}:${GID} /home/${USERNAME} && \
+    chown -R ${UID}:${GID} /tmp
 
-USER skiplist
-WORKDIR /home/skiplist
+USER ${USERNAME}
+WORKDIR /home/${USERNAME}
 

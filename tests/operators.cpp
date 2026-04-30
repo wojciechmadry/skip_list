@@ -45,7 +45,8 @@ TEST(Operators, OperatorEqMove) {
     ++it;
   }
   // NOLINT
-  ASSERT_NO_THROW(copy_sl = std::move(copy_sl));
+  auto &x = copy_sl;
+  ASSERT_NO_THROW(copy_sl = std::move(x));
   ASSERT_EQ(copy_sl.size(), size);
   ASSERT_EQ(copy_sl.front(), -5);
   ASSERT_EQ(copy_sl.back(), 5);

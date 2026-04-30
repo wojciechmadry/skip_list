@@ -9,7 +9,7 @@ Skip list interface based on the [`std::list`](https://en.cppreference.com/w/cpp
 # Requirements
 
 * Your project must support `C++20`
-* `Dazel`(`Bazel`) if you want to run tests
+* `Dazel`(`Bazel`) if you want to run tests (`podman` is used by default)
 * [`genhtml`](https://linux.die.net/man/1/genhtml) to generate code coverage html
 
 # Install

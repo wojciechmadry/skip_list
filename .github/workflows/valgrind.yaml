@@ -23,4 +23,4 @@ jobs:
       - name: Build tests
         run: dazel test //tests:skip_list_gtest_tests
       - name: Run valgrind
-        run: docker exec dazel bash -c "ulimit -n 1024  && valgrind --leak-check=full --error-exitcode=1 ./bazel-bin/tests/skip_list_gtest_tests --gtest_filter=-Clearing.*"
+        run: podman exec dazel bash -c "ulimit -n 1024  && valgrind --leak-check=full --error-exitcode=1 ./bazel-bin/tests/skip_list_gtest_tests --gtest_filter=-Clearing.*"
