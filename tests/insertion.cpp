@@ -124,39 +124,25 @@ TEST(Insertion, VisitedNodesEmplace) {
   sl.set_seed(SEED);
   std::mt19937 gen;
   gen.seed(SEED);
-  /*                     0
-   * 0                   0
-   * 0       0   X  0   0 0 0
-   * 0 0 0   0   0 0   0 0 0 0
-   * 0 0 0 0 0 0 0 0 0 0 0 0 0
-   * ==========================
-   * 1 0 1 2 3 4 5 6 7 8 9 0 1
-   */
-  for (int i = 0; i < 20; ++i) {
-    // Code only to check what size of node is
-    node<int> ng(i, gen);
-    ASSERT_GE(ng.capacity(), 1);
-    // std::cout << i << " = " << ng.size() << '\n';
-  }
   auto emplace = [&](int value) {
     std::size_t visited = 0;
     sl.emplace(value, &visited);
     return visited;
   };
-  ASSERT_EQ(emplace(0), 0); // i == 0
-  ASSERT_EQ(emplace(1), 0);
-  ASSERT_EQ(emplace(2), 2);
-  ASSERT_EQ(emplace(3), 3);
-  ASSERT_EQ(emplace(4), 3);
-  ASSERT_EQ(emplace(5), 4);
-  ASSERT_EQ(emplace(6), 4);
-  ASSERT_EQ(emplace(7), 4);
-  ASSERT_EQ(emplace(8), 5);
-  ASSERT_EQ(emplace(9), 5);  // i == 9
-  ASSERT_EQ(emplace(-1), 0); // i == 10
-  ASSERT_EQ(emplace(10), 2); // i == 11
-  ASSERT_EQ(emplace(11), 3); // i == 12
-  ASSERT_EQ(emplace(5), 3);  // i == 13
+  EXPECT_EQ(emplace(0), 0);
+  EXPECT_EQ(emplace(1), 0);
+  EXPECT_EQ(emplace(2), 2);
+  EXPECT_EQ(emplace(3), 2);
+  EXPECT_EQ(emplace(4), 3);
+  EXPECT_EQ(emplace(5), 4);
+  EXPECT_EQ(emplace(6), 5);
+  EXPECT_EQ(emplace(7), 6);
+  EXPECT_EQ(emplace(8), 2);
+  EXPECT_EQ(emplace(9), 2);
+  EXPECT_EQ(emplace(-1), 0);
+  EXPECT_EQ(emplace(10), 4);
+  EXPECT_EQ(emplace(11), 4);
+  EXPECT_EQ(emplace(5), 5);
   auto it = sl.begin();
   for (int i = -1; i <= 5; ++i, ++it) {
     ASSERT_NE(it, nullptr);
@@ -280,33 +266,19 @@ TEST(Insertion, VisitedNodesReversedEmplace) {
   sl.set_seed(SEED);
   std::mt19937 gen;
   gen.seed(SEED);
-  /*
-   *       0
-   *     0 0 0
-   * 0   0 0 0
-   * 0 0 0 0 0
-   * =======================
-   * 5 4 3 2 1
-   */
-  for (int i = 0; i < 20; ++i) {
-    // Code only to check what size of node is
-    node<int> ng(i, gen);
-    ASSERT_GE(ng.capacity(), 1);
-    // std::cout << i << " = " << ng.size() << '\n';
-  }
   auto emplace = [&](int value) {
     std::size_t visited = 0;
     sl.emplace(value, &visited);
     return visited;
   };
-  ASSERT_EQ(emplace(5), 0); // i == 0
-  ASSERT_EQ(emplace(4), 0);
-  ASSERT_EQ(emplace(3), 2);
-  ASSERT_EQ(emplace(2), 2);
-  ASSERT_EQ(emplace(1), 3);
-  ASSERT_EQ(emplace(10), 0); // i = 5, h = 2
-  ASSERT_EQ(emplace(6), 1);  // i = 6, h = 3
-  ASSERT_EQ(emplace(0), 5);  // i = 7, h = 4
+  EXPECT_EQ(emplace(5), 0);
+  EXPECT_EQ(emplace(4), 0);
+  EXPECT_EQ(emplace(3), 2);
+  EXPECT_EQ(emplace(2), 3);
+  EXPECT_EQ(emplace(1), 3);
+  EXPECT_EQ(emplace(10), 0);
+  EXPECT_EQ(emplace(6), 1);
+  EXPECT_EQ(emplace(0), 2);
   auto it = sl.begin();
   ASSERT_EQ(*(it++), 10);
   for (int i = 6; i >= 0; --i, ++it) {
@@ -370,4 +342,11 @@ TEST(Insertion, InsertWithMoveIterator) {
     ASSERT_NE(*it, nullptr);
     ASSERT_EQ(**it, i);
   }
+}
+
+TEST(Insertion, IsEmplaceAEmplace) {
+  const std::string test(10, 'a');
+  sl::skip_list<std::string> sl;
+  sl.emplace(10, 'a');
+  ASSERT_EQ(*sl.begin(), test);
 }

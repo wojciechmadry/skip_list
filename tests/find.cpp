@@ -133,6 +133,8 @@ TEST(Find, FindString) {
     ASSERT_NE(found, sl.end());
     ASSERT_EQ(*found, str);
   }
+  EXPECT_EQ(sl.find("Ab"), sl.end());
+  EXPECT_EQ(sl.find("Abc"), sl.end());
 }
 
 // Is not optimal to use std search function

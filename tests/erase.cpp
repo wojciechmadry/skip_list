@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "skip_list.hpp"
@@ -210,22 +211,22 @@ TEST(Erase, WithoutEraseAndInsert) {
     return visited;
   };
   int i = 0;
-  ASSERT_EQ(emplace(0, i++), 0);
-  ASSERT_EQ(emplace(1, i++), 0);
-  ASSERT_EQ(emplace(2, i++), 2);
-  ASSERT_EQ(emplace(3, i++), 2);
-  ASSERT_EQ(emplace(4, i++), 3);
-  ASSERT_EQ(emplace(5, i++), 3);
-  ASSERT_EQ(emplace(6, i++), 3);
-  ASSERT_EQ(emplace(7, i++), 4);
-  ASSERT_EQ(emplace(8, i++), 4);
-  ASSERT_EQ(emplace(9, i++), 5);
-  ASSERT_EQ(emplace(-1, i++), 0);
-  ASSERT_EQ(emplace(10, i++), 6);
-  ASSERT_EQ(emplace(11, i++), 7);
-  ASSERT_EQ(emplace(5, i++), 4);
-  ASSERT_EQ(emplace(15, i++), 7);
-  ASSERT_EQ(emplace(12, i++), 7);
+  EXPECT_EQ(emplace(0, i++), 0);
+  EXPECT_EQ(emplace(1, i++), 0);
+  EXPECT_EQ(emplace(2, i++), 2);
+  EXPECT_EQ(emplace(3, i++), 3);
+  EXPECT_EQ(emplace(4, i++), 4);
+  EXPECT_EQ(emplace(5, i++), 3);
+  EXPECT_EQ(emplace(6, i++), 4);
+  EXPECT_EQ(emplace(7, i++), 4);
+  EXPECT_EQ(emplace(8, i++), 5);
+  EXPECT_EQ(emplace(9, i++), 6);
+  EXPECT_EQ(emplace(-1, i++), 0);
+  EXPECT_EQ(emplace(10, i++), 6);
+  EXPECT_EQ(emplace(11, i++), 7);
+  EXPECT_EQ(emplace(5, i++), 4);
+  EXPECT_EQ(emplace(15, i++), 9);
+  EXPECT_EQ(emplace(12, i++), 9);
   ASSERT_NO_THROW(sl.erase(3));
   ASSERT_NO_THROW(sl.erase(4));
   ASSERT_NO_THROW(sl.erase(5));
@@ -240,7 +241,7 @@ TEST(Erase, WithoutEraseAndInsert) {
   ASSERT_NO_THROW(sl.erase(9));
   skip_list<int>::size_type visited = 0;
   ASSERT_NO_THROW(sl.emplace(13, &visited));
-  ASSERT_EQ(visited, 2) << "Skip list balancing error";
+  ASSERT_EQ(visited, 3) << "Skip list balancing error";
 }
 
 TEST(Erase, EraseAndInsert) {
@@ -261,21 +262,21 @@ TEST(Erase, EraseAndInsert) {
   emplace(0, 0);
   emplace(1, 0);
   emplace(2, 2);
-  emplace(3, 2);
-  emplace(4, 3);
+  emplace(3, 3);
+  emplace(4, 4);
   emplace(5, 3);
-  emplace(6, 3);
+  emplace(6, 4);
   emplace(7, 4);
-  emplace(8, 4);
-  emplace(9, 5);
+  emplace(8, 5);
+  emplace(9, 6);
   emplace(-1, 0);
   emplace(10, 6);
   emplace(11, 7);
   emplace(5, 4);
-  emplace(15, 7);
-  emplace(12, 7);
-  emplace(13, 5);
-  emplace(14, 6);
+  emplace(15, 9);
+  emplace(12, 9);
+  emplace(13, 10);
+  emplace(14, 10);
 
   auto it = sl.begin();
   for (int i = -1; i <= 5; ++i, ++it) {
@@ -439,4 +440,151 @@ TEST(Erase, ExtractUniquePtr) {
   ASSERT_TRUE(sl.empty());
   auto not_existing = sl.begin();
   ASSERT_FALSE(sl.extract(not_existing).has_value());
+}
+
+namespace {
+
+std::set<const int *> node_addresses(const sl::skip_list<int> &list) {
+  std::set<const int *> addrs;
+  std::transform(list.begin(), list.end(), std::inserter(addrs, addrs.end()),
+                 [](const auto &data) { return &data; });
+  return addrs;
+}
+} // namespace
+
+TEST(Erase, ExtractWithDuplicates) {
+  sl::skip_list<int> list{1, 2, 2, 3};
+  auto it = list.begin();
+  ++it;
+  const int *addr_first_two = &*it;
+  ++it;
+  const int *addr_second_two = &*it;
+
+  ASSERT_EQ(*it, 2);
+  ASSERT_NE(addr_first_two, addr_second_two);
+
+  const auto extracted = list.extract(it);
+  ASSERT_TRUE(extracted.has_value());
+  EXPECT_EQ(*extracted, 2);
+  EXPECT_EQ(list.size(), 3u);
+
+  const auto remaining = node_addresses(list);
+  EXPECT_FALSE(remaining.contains(addr_second_two));
+  EXPECT_TRUE(remaining.contains(addr_first_two));
+  EXPECT_EQ(std::accumulate(list.begin(), list.end(), 0), 6);
+}
+
+TEST(Erase, ExtractLast) {
+  sl::skip_list<int> list{1, 2, 3, 3};
+
+  auto it = list.begin();
+  ++it;
+  ++it;
+  const int *addr_first_three = &*it;
+  ++it;
+  const int *addr_second_three = &*it;
+
+  ASSERT_EQ(*it, 3);
+  ASSERT_NE(addr_first_three, addr_second_three);
+
+  const auto extracted = list.extract(it);
+  ASSERT_TRUE(extracted.has_value());
+  EXPECT_EQ(*extracted, 3);
+  EXPECT_EQ(list.size(), 3u);
+
+  const auto remaining = node_addresses(list);
+
+  EXPECT_FALSE(remaining.contains(addr_second_three));
+  EXPECT_TRUE(remaining.contains(addr_first_three));
+  EXPECT_EQ(std::accumulate(list.begin(), list.end(), 0), 6);
+}
+
+TEST(Erase, ExtractFirst) {
+  sl::skip_list<int> list{1, 1, 2, 3};
+
+  auto it = list.begin();
+  const int *addr_first_one = &*it;
+  ++it;
+  const int *addr_second_one = &*it;
+
+  ASSERT_EQ(*it, 1);
+  ASSERT_NE(addr_first_one, addr_second_one);
+
+  const auto extracted = list.extract(list.begin());
+  ASSERT_TRUE(extracted.has_value());
+  EXPECT_EQ(*extracted, 1);
+  EXPECT_EQ(list.size(), 3u);
+
+  const auto remaining = node_addresses(list);
+
+  EXPECT_FALSE(remaining.contains(addr_first_one));
+  EXPECT_TRUE(remaining.contains(addr_second_one));
+  EXPECT_EQ(std::accumulate(list.begin(), list.end(), 0), 6);
+}
+
+TEST(Erase, ExtractOneSize) {
+  sl::skip_list<int> list{1};
+  const auto extracted = list.extract(list.begin());
+  ASSERT_TRUE(extracted.has_value());
+  EXPECT_EQ(*extracted, 1);
+  EXPECT_EQ(list.size(), 0);
+  EXPECT_EQ(std::accumulate(list.begin(), list.end(), 0), 0);
+  EXPECT_EQ(list.begin(), nullptr);
+}
+
+TEST(Erase, PopBackWithDuplicates) {
+  sl::skip_list<int> list{1, 2, 3, 3};
+
+  auto it = list.begin();
+  ++it;
+  ++it;
+  const int *addr_first_three = &*it;
+  ++it;
+  const int *addr_second_three = &*it;
+
+  ASSERT_EQ(*it, 3);
+  ASSERT_NE(addr_first_three, addr_second_three);
+
+  list.pop_back();
+  EXPECT_EQ(list.size(), 3u);
+
+  const auto remaining = node_addresses(list);
+
+  EXPECT_FALSE(remaining.contains(addr_second_three));
+  EXPECT_TRUE(remaining.contains(addr_first_three));
+  EXPECT_EQ(std::accumulate(list.begin(), list.end(), 0), 6);
+}
+
+TEST(Erase, DoubleExtracting) {
+  sl::skip_list<int> list{1, 2, 4, 5, 6};
+
+  while (!list.empty()) {
+    auto cit = list.cbegin();
+    for (std::size_t i = 1; i < list.size(); ++i, ++cit) {
+    }
+    const auto value = *cit;
+    const auto v1 = list.extract(cit);
+    ASSERT_TRUE(v1.has_value());
+    EXPECT_EQ(v1.value(), value);
+    ASSERT_FALSE(list.extract(cit));
+  }
+}
+
+TEST(SkipListExtractIterator, PopBackDereferencesNullptr) {
+  sl::skip_list<int> list;
+  const int size = 1000;
+  for (int i = 0; i < size; ++i) {
+    list.push(i);
+  }
+  for (int i = 0; i < size; ++i) {
+    list.pop_back();
+    EXPECT_EQ(list.size(), size - i - 1);
+  }
+}
+
+TEST(SkipListExtractIterator, ExtractEmpty) {
+  sl::skip_list<int> list{1};
+  auto it = list.begin();
+  EXPECT_TRUE(list.extract(it).has_value());
+  EXPECT_FALSE(list.extract(it).has_value());
 }

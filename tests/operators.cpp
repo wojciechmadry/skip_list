@@ -1,3 +1,4 @@
+#include "allocator.hpp"
 #include <algorithm>
 #include <gtest/gtest.h>
 
@@ -56,6 +57,32 @@ TEST(Operators, OperatorEqMove) {
     ASSERT_EQ(*it, i);
     ++it;
   }
+}
+
+TEST(Operators, OperatorEqMoveNoLeak) {
+  alloc_counters counters;
+  {
+    tracked_skip_list dst(std::less<int>{},
+                          counting_allocator<sl::node<int>>{&counters});
+    dst.push(1);
+    dst.push(2);
+    dst.push(3);
+
+    ASSERT_EQ(counters.allocations, 3u);
+    ASSERT_EQ(counters.deallocations, 0u);
+
+    tracked_skip_list src(std::less<int>{},
+                          counting_allocator<sl::node<int>>{&counters});
+    src.push(10);
+    src.push(20);
+
+    ASSERT_EQ(counters.allocations, 5u);
+
+    dst = std::move(src);
+
+    EXPECT_EQ(counters.deallocations, 3u);
+  }
+  EXPECT_EQ(counters.allocations, counters.deallocations);
 }
 
 TEST(Operators, OperatorEqInit) {

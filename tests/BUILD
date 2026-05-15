@@ -5,6 +5,7 @@ filegroup(
     name = "test_sources",
     srcs = glob([
         "*.cpp",
+        "*.hpp",
     ]),
 )
 

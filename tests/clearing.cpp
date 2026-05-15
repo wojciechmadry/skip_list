@@ -203,4 +203,12 @@ TEST(Clearing, ClearEraseInsert) {
   }
 }
 
+TEST(Clearing, Clear1Element) {
+  sl::skip_list<int> sl;
+  sl.insert(0);
+  EXPECT_NE(sl.begin(), nullptr);
+  sl.clear();
+  EXPECT_EQ(sl.begin(), nullptr);
+}
+
 // NOLINTEND
