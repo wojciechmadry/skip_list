@@ -1,6 +1,10 @@
 UseColor: true
 Checks: >
-  bugprone-*, cppcoreguidelines-*, google-*, performance-*, -clang-diagnostic-builtin-macro-redefined,
+  *, -clang-diagnostic-builtin-macro-redefined, -llvmlibc-inline-function-decl,
+  -fuchsia-overloaded-operator,
+  -modernize-use-trailing-return-type,-llvmlibc-callee-namespace,-cert-dcl21-cpp,-altera-id-dependent-backward-branch,
+  -altera-unroll-loops,
+  -readability-identifier-length,-cppcoreguidelines-rvalue-reference-param-not-moved,-fuchsia-default-arguments-declarations,-readability-function-cognitive-complexity,-llvmlibc-restrict-system-libc-headers,-llvmlibc-implementation-in-namespace
 ExtraArgs:
   - '-std=c++20'
 WarningsAsErrors: "*"

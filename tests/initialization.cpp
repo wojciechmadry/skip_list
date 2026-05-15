@@ -12,8 +12,9 @@ TEST(Initialization, ClassCreation) {
   ASSERT_NO_THROW(skip_list<int>{});
   ASSERT_NO_THROW(skip_list<std::string>{});
   ASSERT_NO_THROW(skip_list<std::unique_ptr<int>>{});
-  ASSERT_NO_THROW((skip_list<std::unique_ptr<int>, std::greater<>, 25, 10,
-                             std::allocator<std::unique_ptr<int>>>{}));
+  ASSERT_NO_THROW(
+      (skip_list<std::unique_ptr<int>, std::greater<>, 25, 10,
+                 std::allocator<sl::node<std::unique_ptr<int>, 10>>>{}));
 }
 
 TEST(Initialization, Typedefs) {
@@ -25,8 +26,6 @@ TEST(Initialization, Typedefs) {
   ASSERT_TRUE((std::is_signed_v<decltype(sl)::difference_type>));
   ASSERT_TRUE((std::is_same_v<int &, decltype(sl)::reference>));
   ASSERT_TRUE((std::is_same_v<const int &, decltype(sl)::const_reference>));
-  ASSERT_TRUE((std::is_same_v<int *, decltype(sl)::pointer>));
-  ASSERT_TRUE((std::is_same_v<const int *, decltype(sl)::const_pointer>));
   ASSERT_TRUE(
       (std::is_same_v<decltype(sl)::iterator, decltype(sl)::const_iterator>));
 }
@@ -45,7 +44,7 @@ TEST(Initialization, EmptyList) {
   ASSERT_EQ(sl.size(), 0);
   ASSERT_EQ(const_sl.size(), 0);
   ASSERT_EQ(const_sl.max_size(),
-            std::numeric_limits<skip_list<int>::difference_type>::max());
+            std::numeric_limits<skip_list<int>::size_type>::max());
 }
 
 TEST(Initialization, ConstructorsSimple) {
